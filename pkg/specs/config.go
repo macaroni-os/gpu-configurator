@@ -5,6 +5,8 @@ See AUTHORS and LICENSE for the license details and contributors.
 package specs
 
 import (
+	"encoding/json"
+
 	v "github.com/spf13/viper"
 
 	"gopkg.in/yaml.v2"
@@ -22,7 +24,8 @@ type Config struct {
 }
 
 type CGeneral struct {
-	Debug bool `mapstructure:"debug,omitempty" json:"debug,omitempty" yaml:"debug,omitempty"`
+	Debug   bool   `mapstructure:"debug,omitempty" json:"debug,omitempty" yaml:"debug,omitempty"`
+	Backend string `mapstructure:"backend,omitempty" json:"backend,omitempty" yaml:"backend,omitempty"`
 }
 
 type CLogging struct {
@@ -62,13 +65,15 @@ func (c *Config) GetLogging() *CLogging {
 func (c *Config) Unmarshal() error {
 	c.Viper.ReadInConfig()
 
-	err := c.Viper.Unmarshal(&c)
-
-	return err
+	return c.Viper.Unmarshal(&c)
 }
 
 func (c *Config) Yaml() ([]byte, error) {
 	return yaml.Marshal(c)
+}
+
+func (c *Config) Json() ([]byte, error) {
+	return json.Marshal(c)
 }
 
 func GenDefault(viper *v.Viper) {
@@ -80,8 +85,14 @@ func GenDefault(viper *v.Viper) {
 	viper.SetDefault("logging.json_format", false)
 	viper.SetDefault("logging.enable_emoji", true)
 	viper.SetDefault("logging.color", true)
+
+	viper.SetDefault("general.backend", "macaroni")
 }
 
 func (g *CGeneral) HasDebug() bool {
 	return g.Debug
+}
+
+func (g *CGeneral) GetBackendType() string {
+	return g.Backend
 }
