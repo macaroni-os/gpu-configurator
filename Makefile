@@ -7,13 +7,14 @@ override LDFLAGS += -X "github.com/macaroni-os/gpu-configurator/cmd.BuildCommit=
 NAME ?= gpu-configurator
 PACKAGE_NAME ?= $(NAME)
 REVISION := $(shell git rev-parse --short HEAD || echo dev)
-VERSION := $(shell git describe --tags || echo $(REVISION))
+VERSION := $(shell git describe --tags 2>/dev/null || echo $(REVISION))
 VERSION := $(shell echo $(VERSION) | sed -e 's/^v//g')
 BUILD_PLATFORMS ?= -osarch="linux/amd64" -osarch="linux/386" -osarch="linux/arm"
 ROOT_DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
 .PHONY: all
 all: build
+	@echo "gpu-configurator built. Ready for test."
 
 .PHONY: fmt
 fmt:
