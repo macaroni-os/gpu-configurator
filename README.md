@@ -105,3 +105,31 @@ NVIDIA Kernel Modules Available:
 	* 550.54.14 - 6.7.9-zen1-macaroni
 
 ```
+
+### `nvidia`
+
+The `nvidia` command contains sub-command for NVIDIA setup configuration.
+
+#### `nvidia gbmlib`
+
+This command permits to create the link of the GBM NVIDIA library or to disable
+it.
+
+```bash
+$> gpu-configurator nvidia gbmlib --help
+GBM Backend Library configuration.
+
+Usage:
+   nvidia gbmlib [flags]
+
+Flags:
+      --disable-driver   Disable NVIDIA GBM library.
+      --enable-driver    Enable NVIDIA GBM library.
+  -h, --help             help for gbmlib
+
+Global Flags:
+  -c, --config string   Gpu Configurator configfile
+  -d, --debug           Enable debug output.
+```
+
+
