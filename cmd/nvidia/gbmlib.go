@@ -22,6 +22,7 @@ func NewGbmLibCommand(config *specs.Config) *cobra.Command {
 		PreRun: func(cmd *cobra.Command, args []string) {
 			enableDriver, _ := cmd.Flags().GetBool("enable-driver")
 			disableDriver, _ := cmd.Flags().GetBool("disable-driver")
+			purge, _ := cmd.Flags().GetBool("purge")
 
 			if enableDriver && disableDriver {
 				fmt.Println(
@@ -29,10 +30,17 @@ func NewGbmLibCommand(config *specs.Config) *cobra.Command {
 				os.Exit(1)
 			}
 
+			if purge && !disableDriver {
+				fmt.Println(
+					"--purge flag to use with --disable-driver.")
+				os.Exit(1)
+			}
+
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			enableDriver, _ := cmd.Flags().GetBool("enable-driver")
 			disableDriver, _ := cmd.Flags().GetBool("disable-driver")
+			purge, _ := cmd.Flags().GetBool("purge")
 
 			analyzer, err := analyzer.NewAnalyzer(
 				config.GetGeneral().GetBackendType(),
@@ -114,22 +122,35 @@ func NewGbmLibCommand(config *specs.Config) *cobra.Command {
 
 			} else if disableDriver {
 
-				if nvidiagbmlib == nil || nvidiagbmlib.Disabled {
-					fmt.Println("Library", libName, "not present or already disable.")
-					fmt.Println("Nothing to do.")
-					return
-				}
-
 				libpath := filepath.Join(
 					analyzer.GetBackend().GetGBMLibDir(),
 					nvidiagbmlib.Name,
 				)
 				libpathDisabled := libpath + ".disabled"
 
-				err := os.Rename(libpath, libpathDisabled)
-				if err != nil {
-					fmt.Println("Error on rename link:", err.Error())
-					os.Exit(1)
+				if purge && nvidiagbmlib != nil {
+					if nvidiagbmlib.Disabled {
+						err = os.Remove(libpathDisabled)
+					} else {
+						err = os.Remove(libpath)
+					}
+
+					if err != nil {
+						fmt.Println("Error on remove link:", err.Error())
+						os.Exit(1)
+					}
+
+				} else if nvidiagbmlib == nil || nvidiagbmlib.Disabled {
+					fmt.Println("Library", libName, "not present or already disable.")
+					fmt.Println("Nothing to do.")
+					return
+				} else {
+
+					err := os.Rename(libpath, libpathDisabled)
+					if err != nil {
+						fmt.Println("Error on rename link:", err.Error())
+						os.Exit(1)
+					}
 				}
 
 				fmt.Println("Operation done.")
@@ -141,6 +162,7 @@ func NewGbmLibCommand(config *specs.Config) *cobra.Command {
 	var flags = cmd.Flags()
 	flags.Bool("enable-driver", false, "Enable NVIDIA GBM library.")
 	flags.Bool("disable-driver", false, "Disable NVIDIA GBM library.")
+	flags.Bool("purge", false, "To use with --disable-driver to remove the link library.")
 
 	return cmd
 }
