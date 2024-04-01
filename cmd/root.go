@@ -58,6 +58,7 @@ func initCommand(rootCmd *cobra.Command, config *specs.Config) {
 		newConfigCommand(config),
 		newShowCommand(config),
 		newLsPciCommand(config),
+		newNvidiaCommand(config),
 	)
 }
 

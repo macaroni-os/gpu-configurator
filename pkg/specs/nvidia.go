@@ -13,11 +13,8 @@ func NewNVIDIASetup() *NVIDIASetup {
 
 func (n *NVIDIASetup) HasVersion(v string) bool {
 	ans := false
-	for idx := range n.Drivers {
-		if n.Drivers[idx].Version == v {
-			ans = true
-			break
-		}
+	if d := n.GetDriver(v); d != nil {
+		ans = true
 	}
 	return ans
 }
@@ -29,4 +26,13 @@ func (n *NVIDIASetup) ElaborateVersion() {
 			break
 		}
 	}
+}
+
+func (n *NVIDIASetup) GetDriver(v string) *NVIDIADriver {
+	for idx := range n.Drivers {
+		if n.Drivers[idx].Version == v {
+			return n.Drivers[idx]
+		}
+	}
+	return nil
 }

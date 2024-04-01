@@ -26,3 +26,18 @@ func (s *System) Yaml() ([]byte, error) {
 func (s *System) Json() ([]byte, error) {
 	return json.Marshal(s)
 }
+
+func (s *System) GetGBMLibrary(lib string) *Library {
+	var ans *Library = nil
+
+	if len(s.GbmLibraries) > 0 {
+		for idx := range s.GbmLibraries {
+			if s.GbmLibraries[idx].Name == lib {
+				ans = s.GbmLibraries[idx]
+				break
+			}
+		}
+	}
+
+	return ans
+}

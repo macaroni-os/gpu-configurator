@@ -39,6 +39,9 @@ func NewAnalyzer(btype string) (*Analyzer, error) {
 }
 
 func (a *Analyzer) GetSystem() *specs.System { return a.System }
+func (a *Analyzer) GetBackend() bmacaroni.SystemBackend {
+	return a.Backend
+}
 
 func (a *Analyzer) readGbmLibs() error {
 	var regexlib = regexp.MustCompile(`.so$|.so.disabled$`)
