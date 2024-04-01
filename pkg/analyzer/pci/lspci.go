@@ -96,7 +96,7 @@ func parseLspciOutput(output string) (*[]*PCIDevice, error) {
 			} else if strings.HasPrefix(line, "\tKernel driver") {
 				lastPCIDevice.KernelDriverInUse = words[4]
 			} else if strings.HasPrefix(line, "\tDeviceName") {
-				lastPCIDevice.DeviceName = line[len("DeviceName:")+2:]
+				lastPCIDevice.DeviceName = strings.TrimSpace(line[len("DeviceName:")+2:])
 			} else {
 				// POST: parse kernel modules
 				modules := ""
@@ -116,10 +116,12 @@ func parseLspciOutput(output string) (*[]*PCIDevice, error) {
 			}
 
 			lastPCIDevice.ClassName =
-				line[len(words[0])+1 : strings.Index(line, "[")]
+				strings.TrimSpace(
+					line[len(words[0])+1 : strings.Index(line, "[")],
+				)
 
 			classNameWords := strings.Split(lastPCIDevice.ClassName, " ")
-			pos := len(classNameWords)
+			pos := len(classNameWords) + 1
 			lastPCIDevice.ClassId = strings.ReplaceAll(
 				strings.ReplaceAll(
 					strings.ReplaceAll(words[pos], ":", ""),
