@@ -91,4 +91,17 @@ Vulkan ICD Configs Directories:
 		* radeon_icd.x86_64.json
 	- /etc/vulkan/icd.d
 		* nvidia_icd.json
+
+GBM Backend Librarires:
+	- nvidia-drm_gbm.so (disabled)
+
+NVIDIA Drivers:
+	Active version: 535.86.05
+	Available:
+		- 535.86.05 (with kernel module)
+NVIDIA Kernel Modules Available:
+	* 535.86.05 - 6.1.80-macaroni
+	* 535.86.05 - 6.6.18-macaroni
+	* 550.54.14 - 6.7.9-zen1-macaroni
+
 ```
