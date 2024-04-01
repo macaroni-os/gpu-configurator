@@ -14,6 +14,8 @@ import (
 
 	bmacaroni "github.com/macaroni-os/gpu-configurator/pkg/backend"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
+
+	"github.com/macaroni-os/macaronictl/pkg/utils"
 )
 
 type Analyzer struct {
@@ -44,6 +46,10 @@ func (a *Analyzer) readGbmLibs() error {
 	gbmlibdir := a.Backend.GetGBMLibDir()
 	if gbmlibdir == "" {
 		// POST: nothing to do.
+		return nil
+	}
+
+	if !utils.Exists(gbmlibdir) {
 		return nil
 	}
 
