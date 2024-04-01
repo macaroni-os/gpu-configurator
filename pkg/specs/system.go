@@ -15,6 +15,7 @@ func NewSystem() *System {
 		EglExtPlatformDirs: []*EglExternalPlatformFiles{},
 		VulkanLayersDirs:   []*VulkanLayersFiles{},
 		VulkanICDDirs:      []*EglExternalPlatformFiles{},
+		GbmLibraries:       []*Library{},
 	}
 }
 

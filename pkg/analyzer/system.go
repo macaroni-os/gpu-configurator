@@ -8,7 +8,9 @@ import (
 	"encoding/json"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
+	"strings"
 
 	bmacaroni "github.com/macaroni-os/gpu-configurator/pkg/backend"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
@@ -35,6 +37,61 @@ func NewAnalyzer(btype string) (*Analyzer, error) {
 }
 
 func (a *Analyzer) GetSystem() *specs.System { return a.System }
+
+func (a *Analyzer) readGbmLibs() error {
+	var regexlib = regexp.MustCompile(`.so$|.so.disabled$`)
+
+	gbmlibdir := a.Backend.GetGBMLibDir()
+	if gbmlibdir == "" {
+		// POST: nothing to do.
+		return nil
+	}
+
+	dirEntries, err := os.ReadDir(gbmlibdir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range dirEntries {
+		if file.IsDir() {
+			continue
+		}
+
+		if !regexlib.MatchString(file.Name()) {
+			continue
+		}
+
+		lib := &specs.Library{
+			Name:       file.Name(),
+			LinkedFile: "",
+		}
+
+		path := filepath.Join(gbmlibdir, file.Name())
+
+		// Check if the library is a link
+		finfo, err := os.Lstat(path)
+		if err != nil {
+			return err
+		}
+		if finfo.Mode()&os.ModeSymlink != 0 {
+			// Resolve link
+			linkedLink, err := os.Readlink(path)
+			if err != nil {
+				return err
+			}
+			lib.LinkedFile = linkedLink
+		}
+
+		if strings.HasSuffix(file.Name(), "disabled") {
+			lib.Disabled = true
+			lib.Name = file.Name()[0 : len(file.Name())-len(".disabled")]
+		}
+
+		a.System.GbmLibraries = append(a.System.GbmLibraries, lib)
+	}
+
+	return nil
+}
 
 func (a *Analyzer) Read() error {
 	var err error
@@ -168,6 +225,11 @@ func (a *Analyzer) Read() error {
 			vulkandir.Files[file.Name()] = icdjson
 		}
 
+	}
+
+	err = a.readGbmLibs()
+	if err != nil {
+		return err
 	}
 
 	return nil

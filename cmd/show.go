@@ -81,6 +81,21 @@ func printSummary(s *specs.System) error {
 		}
 	}
 
+	fmt.Println("")
+
+	if len(s.GbmLibraries) == 0 {
+		fmt.Println("GBM Backend Libraries:\tNo libraries available.")
+	} else {
+		fmt.Println("GBM Backend Librarires:")
+		for idx := range s.GbmLibraries {
+			if s.GbmLibraries[idx].Disabled {
+				fmt.Println("\t-", s.GbmLibraries[idx].Name, "(disabled)")
+			} else {
+				fmt.Println("\t-", s.GbmLibraries[idx].Name)
+			}
+		}
+	}
+
 	return nil
 }
 
