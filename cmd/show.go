@@ -96,6 +96,32 @@ func printSummary(s *specs.System) error {
 		}
 	}
 
+	fmt.Println("")
+
+	if len(s.Nvidia.Drivers) == 0 {
+		fmt.Println("NVIDIA Drivers:\tNo drivers available.")
+	} else {
+		fmt.Println("NVIDIA Drivers:")
+		fmt.Println("\tActive version:", s.Nvidia.VersionActive)
+		fmt.Println("\tAvailable:")
+		for idx := range s.Nvidia.Drivers {
+			if s.Nvidia.Drivers[idx].WithKernelModules {
+				fmt.Println("\t\t-", s.Nvidia.Drivers[idx].Version, "(with kernel module)")
+			} else {
+				fmt.Println("\t\t-", s.Nvidia.Drivers[idx].Version)
+			}
+		}
+		if len(s.Nvidia.KModuleAvailable) > 0 {
+			fmt.Println("NVIDIA Kernel Modules Available:")
+			for idx := range s.Nvidia.KModuleAvailable {
+				fmt.Println(fmt.Sprintf("\t* %s - %s",
+					s.Nvidia.KModuleAvailable[idx].GetFieldVersion(),
+					s.Nvidia.KModuleAvailable[idx].KernelVersion,
+				))
+			}
+		}
+	}
+
 	return nil
 }
 

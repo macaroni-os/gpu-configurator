@@ -232,5 +232,21 @@ func (a *Analyzer) Read() error {
 		return err
 	}
 
+	// Retrieve NVIDIA drivers installed
+	nvDrivers, err := a.Backend.GetNVIDIADrivers()
+	if err != nil {
+		return err
+	}
+
+	a.System.Nvidia = specs.NewNVIDIASetup()
+	a.System.Nvidia.Drivers = *nvDrivers
+	a.System.Nvidia.ElaborateVersion()
+
+	nvidiaKModules, err := a.Backend.GetNVIDIAKernelModules()
+	if err != nil {
+		return err
+	}
+	a.System.Nvidia.KModuleAvailable = *nvidiaKModules
+
 	return nil
 }

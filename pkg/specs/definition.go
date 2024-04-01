@@ -11,17 +11,19 @@ type System struct {
 
 	GbmLibraries []*Library `json:"gbm_libs,omitempty" yaml:"gbm_libs,omitempty"`
 
-	Nvidia NVIDIASetup `json:"nvidia,omitempty" yaml:"nvidia,omitempty"`
+	Nvidia *NVIDIASetup `json:"nvidia,omitempty" yaml:"nvidia,omitempty"`
 }
 
 type NVIDIASetup struct {
-	Drivers       []*NVIDIADriver `json:"drivers,omitempty" yaml:"drivers,omitempty"`
-	VersionActive string          `json:"version_active,omitempty" yaml:"version_active,omitempty"`
+	Drivers          []*NVIDIADriver `json:"drivers,omitempty" yaml:"drivers,omitempty"`
+	VersionActive    string          `json:"version_active,omitempty" yaml:"version_active,omitempty"`
+	KModuleAvailable []*KernelModule `json:"kernel_modules,omitempty" yaml:"kernel_modules,omitempty"`
 }
 
 type NVIDIADriver struct {
-	Path    string `json:"path" yaml:"path"`
-	Version string `json:"version" yaml:"version"`
+	Path              string `json:"path" yaml:"path"`
+	Version           string `json:"version" yaml:"version"`
+	WithKernelModules bool   `json:"with_kernel_modules,omitempty" yaml:"with_kernel_modules,omitempty"`
 }
 
 type VulkanLayersFiles struct {
@@ -48,4 +50,11 @@ type Library struct {
 	Name       string `json:"library" yaml:"library"`
 	Disabled   bool   `json:"disabled,omitempty" yaml:"disabled,omitempty"`
 	LinkedFile string `json:"linked_libpath,omitempty" yaml:"linked_libpath,omitempty'`
+}
+
+type KernelModule struct {
+	Path          string            `json:"path,omitempty" yaml:"path,omitempty"`
+	KernelVersion string            `json:"kernel_version,omitempty" yaml:"kernel_version,omitempty"`
+	Fields        map[string]string `json:"fields,omitempty" yaml:"fields,omitempty"`
+	Name          string            `json:"name,omitempty" yaml:"name,omitempty"`
 }

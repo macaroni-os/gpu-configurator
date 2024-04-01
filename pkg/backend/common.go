@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	bmacaroni "github.com/macaroni-os/gpu-configurator/pkg/backend/macaroni"
+	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 )
 
 type SystemBackend interface {
@@ -23,7 +24,8 @@ type SystemBackend interface {
 	// NVIDIA gpu functions
 	GetNVIDIAEglWaylandLibDir() string
 	GetNVIDIAEglGbmLibDir() string
-	GetNVIDIADriverPrefixDir() string
+	GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error)
+	GetNVIDIAKernelModules() (*[]*specs.KernelModule, error)
 }
 
 func NewBackend(btype string) (SystemBackend, error) {
