@@ -19,8 +19,6 @@ const (
 	cliName = `Copyright (c) 2024 - Macaroni OS - Daniele Rondina
 
 gpu-configurator - A GPU configurator helper for Xwayland and/or Xorg`
-
-	GPUCONF_VERSION = `0.1.0`
 )
 
 var (
@@ -59,6 +57,8 @@ func initCommand(rootCmd *cobra.Command, config *specs.Config) {
 		newShowCommand(config),
 		newLsPciCommand(config),
 		newNvidiaCommand(config),
+		newEglCommand(config),
+		newVulkanCommand(config),
 	)
 }
 
@@ -70,7 +70,7 @@ func Execute() {
 
 	var rootCmd = &cobra.Command{
 		Short:        cliName,
-		Version:      fmt.Sprintf("%s-g%s %s", GPUCONF_VERSION, BuildCommit, BuildTime),
+		Version:      fmt.Sprintf("%s-g%s %s", specs.GPUCONF_VERSION, BuildCommit, BuildTime),
 		Args:         cobra.OnlyValidArgs,
 		SilenceUsage: true,
 		PreRun: func(cmd *cobra.Command, args []string) {

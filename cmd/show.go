@@ -29,7 +29,10 @@ func printSummary(s *specs.System) error {
 
 	vgaDevices := lspci.GetVGADevices()
 
-	fmt.Println(`Copyright (c) 2024 - Macaroni OS - gpu-configurator`)
+	fmt.Println(fmt.Sprintf(
+		`Copyright (c) 2024 - Macaroni OS - gpu-configurator - %s`,
+		specs.GPUCONF_VERSION,
+	))
 	fmt.Println("---------------------------------------------------------------------")
 	fmt.Println(fmt.Sprintf("Hostname:\t\t\t\t\t%s", hostname))
 	fmt.Println(fmt.Sprintf("GPUs:\t\t\t\t\t\t%d", len(*vgaDevices)))
@@ -61,8 +64,12 @@ func printSummary(s *specs.System) error {
 		fmt.Println("Vulkan Layers Configs Directories:")
 		for idx := range s.VulkanLayersDirs {
 			fmt.Println("\t-", s.VulkanLayersDirs[idx].Path)
-			for file := range s.VulkanLayersDirs[idx].Files {
-				fmt.Println("\t\t*", file)
+			for file, f := range s.VulkanLayersDirs[idx].Files {
+				if f.Disabled {
+					fmt.Println("\t\t*", file, "(disabled)")
+				} else {
+					fmt.Println("\t\t*", file)
+				}
 			}
 		}
 	}
@@ -75,8 +82,12 @@ func printSummary(s *specs.System) error {
 		fmt.Println("Vulkan ICD Configs Directories:")
 		for idx := range s.VulkanICDDirs {
 			fmt.Println("\t-", s.VulkanICDDirs[idx].Path)
-			for file := range s.VulkanICDDirs[idx].Files {
-				fmt.Println("\t\t*", file)
+			for file, f := range s.VulkanICDDirs[idx].Files {
+				if f.Disabled {
+					fmt.Println("\t\t*", file, "(disabled)")
+				} else {
+					fmt.Println("\t\t*", file)
+				}
 			}
 		}
 	}

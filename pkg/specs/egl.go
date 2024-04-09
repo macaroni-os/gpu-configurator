@@ -7,10 +7,10 @@ package specs
 func NewEglExternalPlatformFiles(dir string) *EglExternalPlatformFiles {
 	return &EglExternalPlatformFiles{
 		Path:  dir,
-		Files: make(map[string]*ICDJson, 0),
+		Files: make(map[string]*JsonFile, 0),
 	}
 }
 
-func (e *EglExternalPlatformFiles) AddFile(file string, icdjson *ICDJson) {
-	e.Files[file] = icdjson
+func (e *EglExternalPlatformFiles) AddFile(file string, jsonfile *JsonFile) {
+	e.Files[file] = jsonfile
 }

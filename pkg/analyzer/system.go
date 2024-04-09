@@ -104,7 +104,7 @@ func (a *Analyzer) readGbmLibs() error {
 
 func (a *Analyzer) Read() error {
 	var err error
-	var regexICD = regexp.MustCompile(`.json$|.json.disable$`)
+	var regexICD = regexp.MustCompile(`.json$|.json.disabled$`)
 	var dirs []string
 
 	// Read egl external platforms directories
@@ -145,7 +145,9 @@ func (a *Analyzer) Read() error {
 				return err
 			}
 
-			egldir.Files[file.Name()] = icdjson
+			jsonfile := specs.NewJsonFile(file.Name(), icdjson)
+
+			egldir.Files[file.Name()] = jsonfile
 		}
 
 	}
@@ -183,12 +185,12 @@ func (a *Analyzer) Read() error {
 				continue
 			}
 
-			fileData := make(map[string]interface{}, 0)
-			if err := json.Unmarshal(content, &fileData); err != nil {
+			vulkanFile := specs.NewVulkanLayersFile(file.Name())
+			if err := json.Unmarshal(content, &vulkanFile.Content); err != nil {
 				return err
 			}
 
-			vulkandir.Files[file.Name()] = fileData
+			vulkandir.Files[file.Name()] = vulkanFile
 		}
 
 	}
@@ -231,7 +233,8 @@ func (a *Analyzer) Read() error {
 				return err
 			}
 
-			vulkandir.Files[file.Name()] = icdjson
+			jsonfile := specs.NewJsonFile(file.Name(), icdjson)
+			vulkandir.Files[file.Name()] = jsonfile
 		}
 
 	}

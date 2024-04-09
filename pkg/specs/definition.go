@@ -27,18 +27,30 @@ type NVIDIADriver struct {
 }
 
 type VulkanLayersFiles struct {
-	Path  string                            `json:"path" yaml:"path"`
-	Files map[string]map[string]interface{} `json:"files,omitempty" yaml:"files,omitempty"`
+	Path  string                       `json:"path" yaml:"path"`
+	Files map[string]*VulkanLayersFile `json:"files,omitempty" yaml:"files,omitempty"`
 }
 
 type EglExternalPlatformFiles struct {
-	Path  string              `json:"path" yaml:"path"`
-	Files map[string]*ICDJson `json:"files,omitempty" yaml:"files,omitempty"`
+	Path  string               `json:"path" yaml:"path"`
+	Files map[string]*JsonFile `json:"files,omitempty" yaml:"files,omitempty"`
+}
+
+type JsonFile struct {
+	Name     string   `json:"name" yaml:"name"`
+	Disabled bool     `json:"disabled,omitempty" yaml:"disabled,omitempty"`
+	File     *ICDJson `json:"file,omitempty" yaml:"file,omitempty"`
 }
 
 type ICDJson struct {
 	FileFormatVersion string      `json:"file_format_version" yaml:"file_format_version"`
 	ICD               ICDJsonData `json:"ICD" yaml:"ICD"`
+}
+
+type VulkanLayersFile struct {
+	Name     string                 `json:"name" yaml:"name"`
+	Disabled bool                   `json:"disabled,omitempty" yaml:"disabled,omitempty"`
+	Content  map[string]interface{} `json:"content,omitempty" yaml:"content,omitempty"`
 }
 
 type ICDJsonData struct {

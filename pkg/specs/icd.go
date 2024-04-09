@@ -6,7 +6,23 @@ package specs
 
 import (
 	"encoding/json"
+	"strings"
 )
+
+func NewJsonFile(n string, f *ICDJson) *JsonFile {
+	ans := &JsonFile{
+		Name:     n,
+		File:     f,
+		Disabled: false,
+	}
+
+	if strings.HasSuffix(n, ".disabled") {
+		ans.Name = ans.Name[0 : len(ans.Name)-9]
+		ans.Disabled = true
+	}
+
+	return ans
+}
 
 func NewICDJson(data []byte) (*ICDJson, error) {
 	ans := &ICDJson{}
