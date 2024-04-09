@@ -62,7 +62,7 @@ An example of the output:
 
 ```bash
 $> gpu-configurator show
-Copyright (c) 2024 - Macaroni OS - gpu-configurator
+Copyright (c) 2024 - Macaroni OS - gpu-configurator - 0.1.0
 ---------------------------------------------------------------------
 Hostname:					nevyl
 GPUs:						2
@@ -132,4 +132,55 @@ Global Flags:
   -d, --debug           Enable debug output.
 ```
 
+### `vulkan`
 
+The `vulkan` command contains sub-command to manage Vulkan JSON files.
+
+#### `vulkan icd`
+
+This command permits to enable/disable a Vulkan ICD JSON file.
+The disable status is managed with the rename of the selected file to
+the same file but with the suffix `.disabled`.
+
+```bash
+$> gpu-configurator vulkan icd --help
+Enable/Disable Vulcan ICD JSON configurations.
+
+Usage:
+   vulkan icd [options] icd.json [flags]
+
+Flags:
+      --disable-icd-file   Disable ICD JSON file.
+      --enable-icd-file    Enable ICD JSON file.
+  -h, --help               help for icd
+      --purge              To use with --disable-icd-file to remove the ICD file.
+
+Global Flags:
+  -c, --config string   Gpu Configurator configfile
+  -d, --debug           Enable debug output.
+```
+
+#### `vulkan layers`
+
+This command permits to enable/disable a Vulkan Layers file.
+The disable status is managed with the rename of the selected file to
+the same file but with the suffix `.disabled`.
+
+
+```bash
+$> gpu-configurator vulkan layers --help
+Enable/Disable Vulcan Layers JSON configurations.
+
+Usage:
+   vulkan layers [options] layers.json [flags]
+
+Flags:
+      --disable-layers-file   Disable Vulkan Layers JSON file.
+      --enable-layers-file    Enable Vulkan Layers JSON file.
+  -h, --help                  help for layers
+      --purge                 To use with --disable-layers-file to remove the file.
+
+Global Flags:
+  -c, --config string   Gpu Configurator configfile
+  -d, --debug           Enable debug output.
+```
