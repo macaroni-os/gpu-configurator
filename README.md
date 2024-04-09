@@ -184,3 +184,27 @@ Global Flags:
   -c, --config string   Gpu Configurator configfile
   -d, --debug           Enable debug output.
 ```
+
+### `egl`
+
+This command permits to enable/disable a specific EGL JSON file.
+The disable status is managed with the rename of the selected file to
+the same file but with the suffix `.disabled`.
+
+```bash
+$> gpu-configurator egl --help
+Enable/Disable EGL JSON configurations.
+
+Usage:
+   egl [options] eglloader.json [flags]
+
+Flags:
+      --disable-json-loader   Disable EGL JSON loader.
+      --enable-json-loader    Enable EGL JSON loader.
+  -h, --help                  help for egl
+      --purge                 To use with --disable-json-loader to remove the JSON file.
+
+Global Flags:
+  -c, --config string   Gpu Configurator configfile
+  -d, --debug           Enable debug output.
+```
