@@ -108,6 +108,11 @@ func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 	prefixDriverPath := "/opt/nvidia"
 	dirPrefix := "nvidia-drivers"
 
+	if !utils.Exists(prefixDriverPath) {
+		// POST: no nvidia drivers available
+		return &ans, nil
+	}
+
 	dirEntries, err := os.ReadDir(prefixDriverPath)
 	if err != nil {
 		return nil, err
