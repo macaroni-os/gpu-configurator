@@ -26,6 +26,9 @@ type SystemBackend interface {
 	GetNVIDIAEglGbmLibDir() string
 	GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error)
 	GetNVIDIAKernelModules() (*[]*specs.KernelModule, error)
+	GetNVIDIADriverActive() (string, error)
+	SetNVIDIAVersion(*specs.NVIDIASetup, string) error
+	PurgeNVIDIAVersion(*specs.NVIDIASetup, string) error
 }
 
 func NewBackend(btype string) (SystemBackend, error) {

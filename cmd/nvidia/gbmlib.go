@@ -11,6 +11,7 @@ import (
 
 	"github.com/macaroni-os/gpu-configurator/pkg/analyzer"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
+	"github.com/macaroni-os/macaronictl/pkg/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -57,6 +58,9 @@ func NewGbmLibCommand(config *specs.Config) *cobra.Command {
 			}
 
 			libName := "nvidia-drm_gbm.so"
+			// Some applications search for nvidia_gbm.so (for
+			// example the electron applications).
+			libNameShort := "nvidia_gbm.so"
 
 			nvidiagbmlib := analyzer.GetSystem().GetGBMLibrary(
 				libName,
@@ -93,6 +97,19 @@ func NewGbmLibCommand(config *specs.Config) *cobra.Command {
 						fmt.Println(fmt.Sprintf(
 							"error on create symlink on %s: %s",
 							linkFile, err.Error()))
+						os.Exit(1)
+					}
+
+					linkShortFile := filepath.Join(
+						analyzer.GetBackend().GetGBMLibDir(),
+						libNameShort,
+					)
+					// Create the short lib name link
+					err = os.Symlink(linkedFile, linkShortFile)
+					if err != nil {
+						fmt.Println(fmt.Sprintf(
+							"error on create symlink on %s: %s",
+							linkShortFile, err.Error()))
 						os.Exit(1)
 					}
 
@@ -140,6 +157,19 @@ func NewGbmLibCommand(config *specs.Config) *cobra.Command {
 						os.Exit(1)
 					}
 
+					nvidiagbmlibShort := filepath.Join(
+						analyzer.GetBackend().GetGBMLibDir(),
+						libNameShort,
+					)
+					if utils.Exists(nvidiagbmlibShort) {
+						err := os.Remove(nvidiagbmlibShort)
+						if err != nil {
+							fmt.Println(fmt.Sprintf("Error on remove file %s: %s",
+								nvidiagbmlibShort, err.Error()))
+							os.Exit(1)
+						}
+					}
+
 				} else if nvidiagbmlib == nil || nvidiagbmlib.Disabled {
 					fmt.Println("Library", libName, "not present or already disable.")
 					fmt.Println("Nothing to do.")
@@ -149,6 +179,19 @@ func NewGbmLibCommand(config *specs.Config) *cobra.Command {
 					err := os.Rename(libpath, libpathDisabled)
 					if err != nil {
 						fmt.Println("Error on rename link:", err.Error())
+						os.Exit(1)
+					}
+
+					nvidiagbmlibShort := filepath.Join(
+						analyzer.GetBackend().GetGBMLibDir(),
+						libNameShort,
+					)
+					if utils.Exists(nvidiagbmlibShort) {
+						err := os.Remove(nvidiagbmlibShort)
+						if err != nil {
+							fmt.Println(fmt.Sprintf("Error on remove file %s: %s",
+								nvidiagbmlibShort, err.Error()))
+						}
 						os.Exit(1)
 					}
 				}

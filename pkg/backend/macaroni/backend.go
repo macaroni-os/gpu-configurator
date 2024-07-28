@@ -2,9 +2,11 @@
 Copyright © 2024 Macaroni OS Linux
 See AUTHORS and LICENSE for the license details and contributors.
 */
-package backend
+package macaroni
 
 import (
+	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +15,11 @@ import (
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 
 	"github.com/macaroni-os/macaronictl/pkg/utils"
+)
+
+const (
+	NvidiaEnvFileName      = "09nvidia"
+	NvidiaPrefixDriverPath = "/opt/nvidia"
 )
 
 type MacaroniBackend struct {
@@ -55,6 +62,64 @@ func (b *MacaroniBackend) GetGBMLibDir() string { return "/usr/lib64/gbm" }
 
 func (b *MacaroniBackend) GetNVIDIAEglWaylandLibDir() string { return "/usr/lib64" }
 func (b *MacaroniBackend) GetNVIDIAEglGbmLibDir() string     { return "/usr/lib64" }
+
+func (b *MacaroniBackend) GetNVIDIADriverActive() (string, error) {
+	ans := ""
+
+	drivers, err := b.GetNVIDIADrivers()
+	if err != nil {
+		return "", err
+	}
+
+	envNvidia := filepath.Join(b.GetEnvironmentDir(), NvidiaEnvFileName)
+
+	if !utils.Exists(envNvidia) {
+		// POST: there isn't an active nvidia driver.
+		return "", nil
+	}
+
+	// Read file /etc/env.d/09nvidia and get NVIDIA_DRIVER_VERSION env
+	f, err := os.Open(envNvidia)
+	if err != nil {
+		return "", fmt.Errorf("Error on open file %s: %s", envNvidia, err.Error())
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+		tokens := strings.Split(line, "=")
+		if len(tokens) != 2 {
+			continue
+		}
+		if tokens[0] == "NVIDIA_DRIVER_VERSION" {
+			ans = strings.ReplaceAll(tokens[1], "\"", "")
+			break
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return ans, fmt.Errorf("Error on read file %s: %s",
+			envNvidia, err.Error())
+	}
+
+	// Check if the version is present between
+	// drivers else ignore it.
+	hasVersion := false
+	for _, driver := range *drivers {
+		if driver.Version == ans {
+			hasVersion = true
+			break
+		}
+	}
+	if hasVersion {
+		return ans, nil
+	}
+	return "", nil
+}
 
 func (b *MacaroniBackend) GetNVIDIAKernelModules() (*[]*specs.KernelModule, error) {
 	modulePath := "/lib/modules"
@@ -102,18 +167,21 @@ func (b *MacaroniBackend) GetNVIDIAKernelModules() (*[]*specs.KernelModule, erro
 	return &ans, nil
 }
 
+func (b *MacaroniBackend) PurgeNVIDIAVersion(setup *specs.NVIDIASetup, v string) error {
+	return nil
+}
+
 func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 	ans := []*specs.NVIDIADriver{}
 
-	prefixDriverPath := "/opt/nvidia"
 	dirPrefix := "nvidia-drivers"
 
-	if !utils.Exists(prefixDriverPath) {
+	if !utils.Exists(NvidiaPrefixDriverPath) {
 		// POST: no nvidia drivers available
 		return &ans, nil
 	}
 
-	dirEntries, err := os.ReadDir(prefixDriverPath)
+	dirEntries, err := os.ReadDir(NvidiaPrefixDriverPath)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +203,7 @@ func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 
 		version := file.Name()[len(dirPrefix)+1:]
 		driverDir := &specs.NVIDIADriver{
-			Path:    filepath.Join(prefixDriverPath, file.Name()),
+			Path:    filepath.Join(NvidiaPrefixDriverPath, file.Name()),
 			Version: version,
 		}
 

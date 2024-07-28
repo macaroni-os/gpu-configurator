@@ -13,13 +13,15 @@ import (
 
 func newNvidiaCommand(config *specs.Config) *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "nvidia",
-		Short: "NVIDIA setup commands.",
-		Args:  cobra.NoArgs,
+		Use:     "nvidia",
+		Aliases: []string{"nv"},
+		Short:   "NVIDIA setup commands.",
+		Args:    cobra.NoArgs,
 	}
 
 	cmd.AddCommand(
 		NewGbmLibCommand(config),
+		NewConfigureCommand(config),
 	)
 
 	return cmd

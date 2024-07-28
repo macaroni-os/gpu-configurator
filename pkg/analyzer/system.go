@@ -252,7 +252,11 @@ func (a *Analyzer) Read() error {
 
 	a.System.Nvidia = specs.NewNVIDIASetup()
 	a.System.Nvidia.Drivers = *nvDrivers
-	a.System.Nvidia.ElaborateVersion()
+	versionActive, err := a.Backend.GetNVIDIADriverActive()
+	if err != nil {
+		return err
+	}
+	a.System.Nvidia.SetVersion(versionActive)
 
 	nvidiaKModules, err := a.Backend.GetNVIDIAKernelModules()
 	if err != nil {
