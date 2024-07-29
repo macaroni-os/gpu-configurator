@@ -1,6 +1,6 @@
 module github.com/macaroni-os/gpu-configurator
 
-go 1.20
+go 1.21
 
 require (
 	github.com/kyokomi/emoji v2.2.4+incompatible
