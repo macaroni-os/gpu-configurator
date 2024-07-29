@@ -35,3 +35,4 @@ changelog:
       - '^tests:'
       - '^scripts:'
       - '^contrib'
+      - '^.github'
