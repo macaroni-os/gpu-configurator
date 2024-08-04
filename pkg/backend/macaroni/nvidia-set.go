@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 	"github.com/macaroni-os/macaronictl/pkg/utils"
@@ -20,11 +21,6 @@ func (b *MacaroniBackend) SetNVIDIAVersion(setup *specs.NVIDIASetup, v string) e
 	//       previous versions.
 
 	// Configure NVIDIA version needs:
-	// 8. create links under /usr/lib64/xorg/modules/drivers/
-	// 9. create links under /usr/lib64/xorgs/modules/extensions/
-	// 10. create hardlink to nvidia kernel driver.
-	// 11. create /etc/conf.d/* (if doesn't exist)
-	// 12. create /etc/ld.so.conf.d/07-nvidia.conf
 
 	// 1. create /etc/env.d/09nvidia file
 	err := b.createNvidiaEnvfile(v)
@@ -68,6 +64,165 @@ func (b *MacaroniBackend) SetNVIDIAVersion(setup *specs.NVIDIASetup, v string) e
 		return err
 	}
 
+	// 8. create links under /usr/lib64/xorg/modules/drivers/
+	err = b.createXorgModulesDriver(v)
+	if err != nil {
+		return err
+	}
+
+	// 9. create links under /usr/lib64/xorgs/modules/extensions/
+	err = b.createXorgModulesExtension(v)
+	if err != nil {
+		return err
+	}
+
+	// 10. create /etc/conf.d/* (if doesn't exist)
+	err = b.createConfdIfNotPresent(v)
+	if err != nil {
+		return err
+	}
+
+	// 11. create /etc/ld.so.conf.d/07-nvidia.conf
+	err = b.createLdsoconfdFile(v)
+	if err != nil {
+		return err
+	}
+
+	// 12. create hardlink to nvidia kernel driver.
+
+	return nil
+}
+
+func (b *MacaroniBackend) createLdsoconfdFile(v string) error {
+	targetDir := "/etc/ld.so.conf.d"
+	targetFile := filepath.Join(targetDir,
+		"07-nvidia",
+	)
+	err := os.WriteFile(targetFile, []byte(
+		fmt.Sprintf(`/opt/nvidia/nvidia-drivers-%s/lib64
+`,
+			v)), 0644)
+
+	if err != nil {
+		return fmt.Errorf("Error on write ld.so.conf.d file %s: %s",
+			targetFile, err.Error())
+	}
+	return nil
+}
+
+func (b *MacaroniBackend) createConfdIfNotPresent(v string) error {
+	driverPath := b.getDriverDir(v)
+
+	targetDir := "/etc/conf.d"
+	targetFile := filepath.Join(targetDir,
+		"nvidia-persistenced",
+	)
+	origPath := filepath.Join(
+		driverPath, targetDir,
+		"nvidia-persistenced",
+	)
+
+	// NOTE: at the moment the file /etc/conf.d/nvidia-persistenced
+	//       very few options. It doesn't make sense to manage
+	//       CONFIG_PROTECT. I just avoid to update it if it's
+	//       already present.
+	if utils.Exists(targetFile) {
+
+		if !utils.Exists(targetDir) {
+			err := os.MkdirAll(targetDir, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Open destination file (truncate it if exists)
+		tfd, err := os.OpenFile(targetFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+		defer tfd.Close()
+
+		// Open source file
+		sourcefd, err := os.Open(origPath)
+		if err != nil {
+			return err
+		}
+		defer sourcefd.Close()
+
+		_, err = io.Copy(tfd, sourcefd)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (b *MacaroniBackend) createXorgModulesExtension(v string) error {
+	driverPath := b.getDriverDir(v)
+
+	targetPath := "/usr/lib64/xorg/modules/extensions"
+	origPath := filepath.Join(
+		driverPath, targetPath,
+		"libglxserver_nvidia.so",
+	)
+
+	if utils.Exists(targetPath) {
+
+		if !utils.Exists(targetPath) {
+			err := os.MkdirAll(targetPath, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+
+		targetFile := filepath.Join(
+			targetPath, "libglxserver_nvidia.so",
+		)
+
+		err := os.Symlink(origPath, targetFile)
+		if err != nil {
+			return fmt.Errorf("error on linking file %s to %s: %s",
+				origPath, targetFile,
+				err.Error())
+		}
+
+	} // else TODO add warning
+
+	return nil
+}
+
+func (b *MacaroniBackend) createXorgModulesDriver(v string) error {
+	driverPath := b.getDriverDir(v)
+
+	targetPath := "/usr/lib64/xorg/modules/drivers"
+	origPath := filepath.Join(
+		driverPath, targetPath,
+		"nvidia_drv.so",
+	)
+
+	if utils.Exists(targetPath) {
+
+		if !utils.Exists(targetPath) {
+			err := os.MkdirAll(targetPath, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+
+		targetFile := filepath.Join(
+			targetPath, "nvidia_drv.so",
+		)
+
+		err := os.Symlink(origPath, targetFile)
+		if err != nil {
+			return fmt.Errorf("error on linking file %s to %s: %s",
+				origPath, targetFile,
+				err.Error())
+		}
+
+	} // else TODO add warning
+
 	return nil
 }
 
@@ -75,10 +230,94 @@ func (b *MacaroniBackend) createUsrShare(v string) error {
 	driverPath := b.getDriverDir(v)
 
 	// Create /usr/share/vulkan/icd.d/nvidia_icd.json file
+	nvidiaVulkanIcdTargetPath := "/usr/share/vulkan/icd.d"
+	nvidiaVulkanIcdOrigPath := filepath.Join(
+		driverPath, nvidiaVulkanIcdTargetPath,
+		"nvidia_icd.json",
+	)
+
+	if utils.Exists(nvidiaVulkanIcdTargetPath) {
+
+		if !utils.Exists(nvidiaVulkanIcdTargetPath) {
+			err := os.MkdirAll(nvidiaVulkanIcdTargetPath, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+
+		nvidiaVulkanIcdTargetFile := filepath.Join(
+			nvidiaVulkanIcdTargetPath,
+			"nvidia_icd.json",
+		)
+
+		err := os.Symlink(nvidiaVulkanIcdOrigPath, nvidiaVulkanIcdTargetFile)
+		if err != nil {
+			return fmt.Errorf("error on linking file %s to %s: %s",
+				nvidiaVulkanIcdOrigPath, nvidiaVulkanIcdTargetFile,
+				err.Error())
+		}
+
+	} // else TODO add warning
 
 	// Create /usr/share/vulkan/implicit_layer.d/nvidia_layers.json
+	nvidiaVulkanLayerTargetPath := "/usr/share/vulkan/implicit_layer.d"
+	nvidiaVulkanLayerOrigPath := filepath.Join(
+		driverPath, nvidiaVulkanLayerTargetPath,
+		"nvidia_layers.json",
+	)
+
+	if utils.Exists(nvidiaVulkanLayerTargetPath) {
+
+		if !utils.Exists(nvidiaVulkanLayerTargetPath) {
+			err := os.MkdirAll(nvidiaVulkanLayerTargetPath, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+
+		nvidiaVulkanLayerTargetFile := filepath.Join(
+			nvidiaVulkanLayerTargetPath,
+			"nvidia_layers.json",
+		)
+
+		err := os.Symlink(nvidiaVulkanLayerOrigPath, nvidiaVulkanLayerTargetFile)
+		if err != nil {
+			return fmt.Errorf("error on linking file %s to %s: %s",
+				nvidiaVulkanLayerOrigPath, nvidiaVulkanLayerTargetFile,
+				err.Error())
+		}
+
+	} // else TODO add warning
 
 	// Create /usr/share/nvidia/ files
+	shareNvidiaFiles := []string{
+		"nvidia-application-profiles-PV-rc",
+		"nvidia-application-profiles-PV-key-documentation",
+		"nvoptix.bin",
+	}
+	shareNvidiaTargetPath := "/usr/share/nvidia"
+	shareNvidiaOriginPath := filepath.Join(
+		driverPath, shareNvidiaTargetPath,
+	)
+	if !utils.Exists(shareNvidiaTargetPath) {
+		err := os.MkdirAll(shareNvidiaTargetPath, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, f := range shareNvidiaFiles {
+		f := strings.ReplaceAll(f, "PV", v)
+		origfile := filepath.Join(shareNvidiaOriginPath, f)
+		targetfile := filepath.Join(
+			shareNvidiaTargetPath, f)
+
+		err := os.Symlink(origfile, targetfile)
+		if err != nil {
+			return fmt.Errorf("error on linking file %s to %s: %s",
+				origfile, targetfile, err.Error())
+		}
+	}
 
 	// Create /usr/share/glvnd/egl_vendor.d/10_nvidia.json
 	eglvendorTargetPath := "/usr/share/glvnd/egl_vendor.d"
