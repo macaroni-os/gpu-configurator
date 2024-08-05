@@ -25,7 +25,7 @@ type SystemBackend interface {
 	GetNVIDIAEglWaylandLibDir() string
 	GetNVIDIAEglGbmLibDir() string
 	GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error)
-	GetNVIDIAKernelModules() (*[]*specs.KernelModule, error)
+	GetNVIDIAKernelModules(open bool) (*[]*specs.KernelModule, error)
 	GetNVIDIADriverActive() (string, error)
 	SetNVIDIAVersion(*specs.NVIDIASetup, string) error
 	PurgeNVIDIAVersion(*specs.NVIDIASetup, string) error

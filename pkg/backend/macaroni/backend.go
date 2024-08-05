@@ -121,45 +121,68 @@ func (b *MacaroniBackend) GetNVIDIADriverActive() (string, error) {
 	return "", nil
 }
 
-func (b *MacaroniBackend) GetNVIDIAKernelModules() (*[]*specs.KernelModule, error) {
-	modulePath := "/lib/modules"
+func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelModule, error) {
+	modulePath := "/lib/modules/nvidia"
+	if open {
+		modulePath = "/lib/modules/nvidia-open"
+	}
+
 	ans := []*specs.KernelModule{}
+
+	if !utils.Exists(modulePath) {
+		return &ans, nil
+	}
 
 	dirEntries, err := os.ReadDir(modulePath)
 	if err != nil {
 		return nil, err
 	}
 
+	// Path used by slotted package follow this pattern
+	// /lib/modules/[nvidia|nvidia-open]/<NVIDIA_DRIVER_VERSION>/<KVERSION>/video/*.ko[.zst]
+
 	for _, file := range dirEntries {
 		if !file.IsDir() {
 			continue
 		}
 
-		kVersion := file.Name()
+		nvidiaVersion := file.Name()
 
-		nvidiaKmoduleDir := filepath.Join(
-			modulePath, kVersion, "video")
-		nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko.zst")
-
-		kversion := ""
-		if utils.Exists(nvidiaKModule) {
-			kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
-		} else {
-			nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
-			if utils.Exists(nvidiaKModule) {
-				kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
-			}
+		nvidiaKVersionPath := filepath.Join(modulePath, nvidiaVersion)
+		kernelDirs, err := os.ReadDir(nvidiaKVersionPath)
+		if err != nil {
+			return nil, err
 		}
 
-		if kversion != "" {
-			lp := &specs.KernelModule{
-				Path:          nvidiaKModule,
-				KernelVersion: kVersion,
-				Name:          "nvidia",
-				Fields:        make(map[string]string, 0),
+		for _, kf := range kernelDirs {
+			kVersion := kf.Name()
+
+			nvidiaKmoduleDir := filepath.Join(
+				nvidiaKVersionPath, kVersion, "video")
+			nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko.zst")
+
+			kversion := ""
+			if utils.Exists(nvidiaKModule) {
+				kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+			} else {
+				nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+				if utils.Exists(nvidiaKModule) {
+					kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+				}
 			}
-			lp.Fields["version"] = kversion
-			ans = append(ans, lp)
+
+			// TODO: if nvidiaKModule != nvidiaVersion add Warning.
+
+			if kversion != "" {
+				lp := &specs.KernelModule{
+					Path:          nvidiaKModule,
+					KernelVersion: kVersion,
+					Name:          "nvidia",
+					Fields:        make(map[string]string, 0),
+				}
+				lp.Fields["version"] = kversion
+				ans = append(ans, lp)
+			}
 		}
 
 	}

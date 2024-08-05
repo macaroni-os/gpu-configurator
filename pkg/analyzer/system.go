@@ -258,11 +258,17 @@ func (a *Analyzer) Read() error {
 	}
 	a.System.Nvidia.SetVersion(versionActive)
 
-	nvidiaKModules, err := a.Backend.GetNVIDIAKernelModules()
+	nvidiaKModules, err := a.Backend.GetNVIDIAKernelModules(false)
 	if err != nil {
 		return err
 	}
 	a.System.Nvidia.KModuleAvailable = *nvidiaKModules
+
+	nvidiaOpenKModules, err := a.Backend.GetNVIDIAKernelModules(true)
+	if err != nil {
+		return err
+	}
+	a.System.Nvidia.KOpenModuleAvailable = *nvidiaOpenKModules
 
 	return nil
 }
