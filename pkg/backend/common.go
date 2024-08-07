@@ -28,7 +28,7 @@ type SystemBackend interface {
 	GetNVIDIAKernelModules(open bool) (*[]*specs.KernelModule, error)
 	GetNVIDIADriverActive() (string, error)
 	SetNVIDIAVersion(*specs.NVIDIASetup, string) error
-	PurgeNVIDIAVersion(*specs.NVIDIASetup, string) error
+	PurgeNVIDIADriver(*specs.NVIDIASetup) error
 }
 
 func NewBackend(btype string) (SystemBackend, error) {

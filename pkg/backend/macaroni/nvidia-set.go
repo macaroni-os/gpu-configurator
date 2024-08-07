@@ -15,6 +15,39 @@ import (
 	"github.com/macaroni-os/macaronictl/pkg/utils"
 )
 
+var (
+	binariesBin = []string{
+		"nvidia-cuda-mps-control",
+		"nvidia-cuda-mps-server",
+		"nvidia-debugdump",
+		"nvidia-settings",
+		"nvidia-smi",
+		"nvidia-xconfig",
+		"nvidia-powerd",
+		"nvidia-persistenced",
+	}
+
+	initdscripts = []string{
+		"nvidia-persistenced",
+		"nvidia-powerd",
+		"nvidia-smi",
+	}
+
+	shareNvidiaFiles = []string{
+		"nvidia-application-profiles-PV-rc",
+		"nvidia-application-profiles-PV-key-documentation",
+		"nvoptix.bin",
+	}
+
+	manPages = []string{
+		"nvidia-smi.1",
+		"nvidia-cuda-mps-control.1",
+		"nvidia-persistenced.1",
+		"nvidia-xconfig.1",
+		"nvidia-settings.1",
+	}
+)
+
 func (b *MacaroniBackend) SetNVIDIAVersion(setup *specs.NVIDIASetup, v string) error {
 	// NOTE: I want to reset the links and setup every time. This permits
 	//       to fix things also when there are bugs on gpu-configurator with
@@ -290,11 +323,6 @@ func (b *MacaroniBackend) createUsrShare(v string) error {
 	} // else TODO add warning
 
 	// Create /usr/share/nvidia/ files
-	shareNvidiaFiles := []string{
-		"nvidia-application-profiles-PV-rc",
-		"nvidia-application-profiles-PV-key-documentation",
-		"nvoptix.bin",
-	}
 	shareNvidiaTargetPath := "/usr/share/nvidia"
 	shareNvidiaOriginPath := filepath.Join(
 		driverPath, shareNvidiaTargetPath,
@@ -405,13 +433,6 @@ func (b *MacaroniBackend) createUsrShare(v string) error {
 	} // else TODO: Add warning
 
 	// Create /usr/share/man/man1/* files
-	manPages := []string{
-		"nvidia-smi.1",
-		"nvidia-cuda-mps-control.1",
-		"nvidia-persistenced.1",
-		"nvidia-xconfig.1",
-		"nvidia-settings.1",
-	}
 	manTargetPath := "/usr/share/man/man1"
 	manOriginPath := filepath.Join(
 		driverPath, manTargetPath,
@@ -585,15 +606,9 @@ func (b *MacaroniBackend) createInitd(v string) error {
 		"etc/init.d",
 	)
 
-	scripts := []string{
-		"nvidia-persistenced",
-		"nvidia-powerd",
-		"nvidia-smi",
-	}
+	for idx := range initdscripts {
 
-	for idx := range scripts {
-
-		f := filepath.Join(initdDir, scripts[idx])
+		f := filepath.Join(initdDir, initdscripts[idx])
 		if !utils.Exists(f) {
 			continue
 		}
@@ -603,7 +618,7 @@ func (b *MacaroniBackend) createInitd(v string) error {
 			continue
 		}
 
-		t := filepath.Join("/etc/init.d", scripts[idx])
+		t := filepath.Join("/etc/init.d", initdscripts[idx])
 
 		// Open destination file (truncate it if exists)
 		tfd, err := os.OpenFile(t, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
@@ -644,17 +659,6 @@ func (b *MacaroniBackend) createNvidiaBins(v string) error {
 		dirPrefix+"-"+v,
 	)
 	driverBinDir := filepath.Join(driverDir, "/bin")
-
-	binariesBin := []string{
-		"nvidia-cuda-mps-control",
-		"nvidia-cuda-mps-server",
-		"nvidia-debugdump",
-		"nvidia-settings",
-		"nvidia-smi",
-		"nvidia-xconfig",
-		"nvidia-powerd",
-		"nvidia-persistenced",
-	}
 
 	for idx := range binariesBin {
 		f := filepath.Join(driverBinDir, binariesBin[idx])

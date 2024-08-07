@@ -190,10 +190,6 @@ func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelMod
 	return &ans, nil
 }
 
-func (b *MacaroniBackend) PurgeNVIDIAVersion(setup *specs.NVIDIASetup, v string) error {
-	return nil
-}
-
 func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 	ans := []*specs.NVIDIADriver{}
 
