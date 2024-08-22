@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/macaroni-os/gpu-configurator/pkg/kernel"
+	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 
 	"github.com/macaroni-os/macaronictl/pkg/utils"
@@ -65,6 +66,7 @@ func (b *MacaroniBackend) GetNVIDIAEglGbmLibDir() string     { return "/usr/lib6
 
 func (b *MacaroniBackend) GetNVIDIADriverActive() (string, error) {
 	ans := ""
+	log := logger.GetDefaultLogger()
 
 	drivers, err := b.GetNVIDIADrivers()
 	if err != nil {
@@ -97,6 +99,7 @@ func (b *MacaroniBackend) GetNVIDIADriverActive() (string, error) {
 		}
 		if tokens[0] == "NVIDIA_DRIVER_VERSION" {
 			ans = strings.ReplaceAll(tokens[1], "\"", "")
+			log.DebugC("Found nvidia env version with value", ans)
 			break
 		}
 	}
@@ -118,7 +121,33 @@ func (b *MacaroniBackend) GetNVIDIADriverActive() (string, error) {
 	if hasVersion {
 		return ans, nil
 	}
+	if ans != "" {
+		log.DebugC("Found nvidia env variable mismatch. Ignored.")
+	}
 	return "", nil
+}
+
+func (b *MacaroniBackend) GetNVIDIAKernelModulesActive(open bool) (*[]*specs.KernelModule, error) {
+	modulePath := "/lib/modules/nvidia"
+	if open {
+		modulePath = "/lib/modules/nvidia-open"
+	}
+
+	log := logger.GetDefaultLogger()
+	ans := []*specs.KernelModule{}
+
+	if !utils.Exists(modulePath) {
+		return &ans, nil
+	}
+
+	/*
+		dirEntries, err := os.ReadDir(modulePath)
+		if err != nil {
+			return nil, err
+		}
+	*/
+
+	return &ans, nil
 }
 
 func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelModule, error) {
@@ -127,6 +156,7 @@ func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelMod
 		modulePath = "/lib/modules/nvidia-open"
 	}
 
+	log := logger.GetDefaultLogger()
 	ans := []*specs.KernelModule{}
 
 	if !utils.Exists(modulePath) {
@@ -159,7 +189,7 @@ func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelMod
 
 			nvidiaKmoduleDir := filepath.Join(
 				nvidiaKVersionPath, kVersion, "video")
-			nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko.zst")
+			nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko.xz")
 
 			kversion := ""
 			if utils.Exists(nvidiaKModule) {
@@ -169,6 +199,16 @@ func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelMod
 				if utils.Exists(nvidiaKModule) {
 					kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
 				}
+			}
+
+			if open {
+				log.DebugC(fmt.Sprintf(
+					"Found open kernel module %s for nvidia version %s under %s.",
+					kVersion, nvidiaVersion, nvidiaKmoduleDir))
+			} else {
+				log.DebugC(fmt.Sprintf(
+					"Found kernel module %s for nvidia version %s under %s.",
+					kVersion, nvidiaVersion, nvidiaKmoduleDir))
 			}
 
 			// TODO: if nvidiaKModule != nvidiaVersion add Warning.
@@ -192,6 +232,7 @@ func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelMod
 
 func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 	ans := []*specs.NVIDIADriver{}
+	log := logger.GetDefaultLogger()
 
 	dirPrefix := "nvidia-drivers"
 
@@ -244,6 +285,8 @@ func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 			driverDir.WithKernelModules = true
 		}
 
+		log.DebugC(fmt.Sprintf("Found driver %s under %s with kernel module %v",
+			version, driverDir.Path, driverDir.WithKernelModules))
 		ans = append(ans, driverDir)
 	}
 

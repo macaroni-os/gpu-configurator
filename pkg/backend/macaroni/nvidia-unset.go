@@ -5,27 +5,36 @@ See AUTHORS and LICENSE for the license details and contributors.
 package macaroni
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 	"github.com/macaroni-os/macaronictl/pkg/utils"
 )
 
 func (b *MacaroniBackend) PurgeNVIDIADriver(setup *specs.NVIDIASetup) error {
 
+	log := logger.GetDefaultLogger()
+
+	if setup.VersionActive != "" {
+		log.InfoC(fmt.Sprintf("Purging version %s...",
+			setup.VersionActive))
+	} else {
+		log.InfoC("Force purge system from nvidia files...")
+	}
+
 	// 1. Removing /etc/env.d/09nvidia file
 	f := "/etc/env.d/09nvidia"
-	if utils.Exists(f) {
-		err := os.Remove(f)
-		if err != nil {
-			return err
-		}
+	err := b.removeFileIfExist(f)
+	if err != nil {
+		return err
 	}
 
 	// 2. Removing /usr/bin/ links
-	err := b.purgeNvidiaBins()
+	err = b.purgeNvidiaBins()
 	if err != nil {
 		return err
 	}
@@ -83,36 +92,40 @@ func (b *MacaroniBackend) PurgeNVIDIADriver(setup *specs.NVIDIASetup) error {
 	return nil
 }
 
+func (b *MacaroniBackend) removeFileIfExist(f string) error {
+	log := logger.GetDefaultLogger()
+
+	if utils.Exists(f) {
+		err := os.Remove(f)
+		if err != nil {
+			return err
+		}
+		log.DebugC(fmt.Sprintf(
+			"File %s removed.", f))
+	} else {
+		log.DebugC(fmt.Sprintf(
+			"File %s not present.", f))
+	}
+
+	return nil
+}
+
 func (b *MacaroniBackend) purgeLdsoconfdFile() error {
 	targetDir := "/etc/ld.so.conf.d"
 	targetFile := filepath.Join(targetDir,
 		"07-nvidia",
 	)
 
-	if utils.Exists(targetFile) {
-		err := os.Remove(targetFile)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return b.removeFileIfExist(targetFile)
 }
 
 func (b *MacaroniBackend) purgeXorgModulesExtension() error {
 	targetPath := "/usr/lib64/xorg/modules/extensions"
 	targetFile := filepath.Join(
-		targetPath, "nvidia_drv.so",
+		targetPath, "libglxserver_nvidia.so",
 	)
 
-	if utils.Exists(targetFile) {
-		err := os.Remove(targetFile)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return b.removeFileIfExist(targetFile)
 }
 
 func (b *MacaroniBackend) purgeXorgModulesDriver() error {
@@ -121,14 +134,7 @@ func (b *MacaroniBackend) purgeXorgModulesDriver() error {
 		targetPath, "nvidia_drv.so",
 	)
 
-	if utils.Exists(targetFile) {
-		err := os.Remove(targetFile)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return b.removeFileIfExist(targetFile)
 }
 
 func (b *MacaroniBackend) purgeUsrShare(v string) error {
@@ -138,11 +144,9 @@ func (b *MacaroniBackend) purgeUsrShare(v string) error {
 		"nvidia_icd.json",
 	)
 
-	if utils.Exists(nvidiaVulkanIcdTargetFile) {
-		err := os.Remove(nvidiaVulkanIcdTargetFile)
-		if err != nil {
-			return err
-		}
+	err := b.removeFileIfExist(nvidiaVulkanIcdTargetFile)
+	if err != nil {
+		return err
 	}
 
 	// Removing /usr/share/vulkan/implicit_layer.d/nvidia_layers.json
@@ -152,23 +156,48 @@ func (b *MacaroniBackend) purgeUsrShare(v string) error {
 		"nvidia_layers.json",
 	)
 
-	if utils.Exists(nvidiaVulkanLayerTargetFile) {
-		err := os.Remove(nvidiaVulkanLayerTargetFile)
-		if err != nil {
-			return err
-		}
+	err = b.removeFileIfExist(nvidiaVulkanLayerTargetFile)
+	if err != nil {
+		return err
 	}
 
 	// Removing /usr/share/nvidia/ files
 	shareNvidiaTargetPath := "/usr/share/nvidia"
 	for _, f := range shareNvidiaFiles {
+
+		if v == "" && strings.Index(f, "PV") > 0 {
+			// POST: If v is empty i will try to search file later.
+			continue
+		}
+
 		f := strings.ReplaceAll(f, "PV", v)
-		targetfile := filepath.Join(
+		targetFile := filepath.Join(
 			shareNvidiaTargetPath, f)
 
-		err := os.Remove(targetfile)
+		err = b.removeFileIfExist(targetFile)
 		if err != nil {
 			return err
+		}
+	}
+
+	if v == "" && utils.Exists(shareNvidiaTargetPath) {
+		// POST: Try to removing files with a name starting
+		//       with `nvidia-application-profiles-`
+		dirs, err := os.ReadDir(shareNvidiaTargetPath)
+		for _, file := range dirs {
+			if file.IsDir() {
+				continue
+			}
+
+			if strings.HasPrefix(file.Name(), "nvidia-application-profiles-") {
+				f := filepath.Join(shareNvidiaTargetPath,
+					file.Name())
+
+				err = b.removeFileIfExist(f)
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 
@@ -179,11 +208,20 @@ func (b *MacaroniBackend) purgeUsrShare(v string) error {
 		"10_nvidia.json",
 	)
 
-	if utils.Exists(eglvendorTargetFile) {
-		err := os.Remove(eglvendorTargetFile)
-		if err != nil {
-			return err
-		}
+	err = b.removeFileIfExist(eglvendorTargetFile)
+	if err != nil {
+		return err
+	}
+
+	// Removing /usr/share/X11/xorg.conf.d/nvidia-drm-outputclass.conf
+	outputclassTargetPath := "/usr/share/X11/xorg.conf.d"
+	outputclassTargetFile := filepath.Join(
+		outputclassTargetPath,
+		"nvidia-drm-outputclass.conf",
+	)
+	err = b.removeFileIfExist(outputclassTargetFile)
+	if err != nil {
+		return err
 	}
 
 	// Removing /usr/share/dbus-1/system.d/nvidia-dbus.conf
@@ -191,22 +229,18 @@ func (b *MacaroniBackend) purgeUsrShare(v string) error {
 	dbusTargetFile := filepath.Join(
 		dbusSystemTargetPath, "nvidia-dbus.conf",
 	)
-	if utils.Exists(dbusTargetFile) {
-		err := os.Remove(dbusTargetFile)
-		if err != nil {
-			return err
-		}
+	err = b.removeFileIfExist(dbusTargetFile)
+	if err != nil {
+		return err
 	}
 
 	// Removing /usr/share/man/man1/* files
 	manTargetPath := "/usr/share/man/man1"
 	for _, f := range manPages {
 		manFile := filepath.Join(manTargetPath, f)
-		if utils.Exists(manFile) {
-			err := os.Remove(manFile)
-			if err != nil {
-				return err
-			}
+		err = b.removeFileIfExist(manFile)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -219,11 +253,9 @@ func (b *MacaroniBackend) purgePngfile() error {
 		"nvidia-settings.png",
 	)
 
-	if utils.Exists(pngFile) {
-		err := os.Remove(pngFile)
-		if err != nil {
-			return err
-		}
+	err := b.removeFileIfExist(pngFile)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -235,11 +267,9 @@ func (b *MacaroniBackend) purgeDesktopfile() error {
 		"nvidia-settings.desktop",
 	)
 
-	if utils.Exists(desktopFile) {
-		err := os.Remove(desktopFile)
-		if err != nil {
-			return err
-		}
+	err := b.removeFileIfExist(desktopFile)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -253,49 +283,34 @@ func (b *MacaroniBackend) purgeEtc() error {
 	var nvidiaFile = filepath.Join(etcsandboxd, "20nvidia")
 	var nvidiaTmpfilesd = filepath.Join(tmpfilesd, "nvidia-drivers.conf")
 
-	if utils.Exists(nvidiaFile) {
-		err := os.Remove(nvidiaFile)
-		if err != nil {
-			return err
-		}
+	err := b.removeFileIfExist(nvidiaFile)
+	if err != nil {
+		return err
 	}
 
-	if utils.Exists(nvidiaSettingsFile) {
-		err := os.Remove(nvidiaSettingsFile)
-		if err != nil {
-			return err
-		}
+	err = b.removeFileIfExist(nvidiaSettingsFile)
+	if err != nil {
+		return err
 	}
 
-	if utils.Exists(nvidiaTmpfilesd) {
-		err := os.Remove(nvidiaTmpfilesd)
-		if err != nil {
-			return err
-		}
+	err = b.removeFileIfExist(nvidiaTmpfilesd)
+	if err != nil {
+		return err
 	}
 
 	openCLDir := "/etc/OpenCL/vendors"
 	linkOpenCLFile := filepath.Join(
 		openCLDir, "nvidia.icd",
 	)
-	if utils.Exists(linkOpenCLFile) {
-		err := os.Remove(linkOpenCLFile)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return b.removeFileIfExist(linkOpenCLFile)
 }
 
 func (b *MacaroniBackend) purgeNvidiaBins() error {
 	for idx := range binariesBin {
 		f := filepath.Join("/usr/bin/", binariesBin[idx])
-		if utils.Exists(f) {
-			err := os.Remove(f)
-			if err != nil {
-				return err
-			}
+		err := b.removeFileIfExist(f)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -305,11 +320,9 @@ func (b *MacaroniBackend) purgeNvidiaBins() error {
 func (b *MacaroniBackend) purgeNvidiaInitd() error {
 	for idx := range initdscripts {
 		f := filepath.Join("/etc/init.d/", initdscripts[idx])
-		if utils.Exists(f) {
-			err := os.Remove(f)
-			if err != nil {
-				return err
-			}
+		err := b.removeFileIfExist(f)
+		if err != nil {
+			return err
 		}
 	}
 

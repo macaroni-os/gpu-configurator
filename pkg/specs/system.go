@@ -16,6 +16,7 @@ func NewSystem() *System {
 		VulkanLayersDirs:   []*VulkanLayersFiles{},
 		VulkanICDDirs:      []*EglExternalPlatformFiles{},
 		GbmLibraries:       []*Library{},
+		Nvidia:             &NVIDIASetup{},
 	}
 }
 
@@ -25,6 +26,10 @@ func (s *System) Yaml() ([]byte, error) {
 
 func (s *System) Json() ([]byte, error) {
 	return json.Marshal(s)
+}
+
+func (s *System) GetNvidia() *NVIDIASetup {
+	return s.Nvidia
 }
 
 func (s *System) GetGBMLibrary(lib string) *Library {

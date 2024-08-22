@@ -6,8 +6,8 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
+	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	specs "github.com/macaroni-os/gpu-configurator/pkg/specs"
 
 	"github.com/spf13/cobra"
@@ -20,6 +20,7 @@ func newConfigCommand(config *specs.Config) *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			jsonOutput, _ := cmd.Flags().GetBool("json")
+			log := logger.GetDefaultLogger()
 
 			var err error
 			var data []byte
@@ -30,8 +31,7 @@ func newConfigCommand(config *specs.Config) *cobra.Command {
 				data, err = config.Yaml()
 			}
 			if err != nil {
-				fmt.Println(err.Error())
-				os.Exit(1)
+				log.Fatal(err.Error())
 			}
 			fmt.Println(string(data))
 

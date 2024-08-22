@@ -53,6 +53,7 @@ func (b *MacaroniBackend) SetNVIDIAVersion(setup *specs.NVIDIASetup, v string) e
 	//       to fix things also when there are bugs on gpu-configurator with
 	//       previous versions.
 
+	fmt.Println("Setting version ", v)
 	// Configure NVIDIA version needs:
 
 	// 1. create /etc/env.d/09nvidia file
@@ -123,6 +124,12 @@ func (b *MacaroniBackend) SetNVIDIAVersion(setup *specs.NVIDIASetup, v string) e
 
 	// 12. create hardlink to nvidia kernel driver.
 
+	// 13. create the /lib/udev/nvidia-udev.sh based on version enabled.
+	err = b.createUdevScript()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -154,6 +161,11 @@ func (b *MacaroniBackend) createConfdIfNotPresent(v string) error {
 		driverPath, targetDir,
 		"nvidia-persistenced",
 	)
+
+	if !utils.Exists(origPath) {
+		fmt.Println(fmt.Sprintf("WARNING: File %s not found",
+			origPath))
+	}
 
 	// NOTE: at the moment the file /etc/conf.d/nvidia-persistenced
 	//       very few options. It doesn't make sense to manage
@@ -195,12 +207,15 @@ func (b *MacaroniBackend) createXorgModulesExtension(v string) error {
 	driverPath := b.getDriverDir(v)
 
 	targetPath := "/usr/lib64/xorg/modules/extensions"
+	// /opt/nvidia/nvidia-drivers-555.42.02/lib64/opengl/nvidia/extensions/libglxserver_nvidia.so
+	sourcePath := "/lib64/opengl/nvidia/extensions"
 	origPath := filepath.Join(
-		driverPath, targetPath,
+		driverPath, sourcePath,
 		"libglxserver_nvidia.so",
 	)
 
-	if utils.Exists(targetPath) {
+	fmt.Println("ORIG ", origPath)
+	if utils.Exists(origPath) {
 
 		if !utils.Exists(targetPath) {
 			err := os.MkdirAll(targetPath, os.ModePerm)
@@ -229,8 +244,10 @@ func (b *MacaroniBackend) createXorgModulesDriver(v string) error {
 	driverPath := b.getDriverDir(v)
 
 	targetPath := "/usr/lib64/xorg/modules/drivers"
+	// /opt/nvidia/nvidia-drivers-555.42.02/lib64/xorg/modules/drivers/nvidia_drv.so
+	sourcePath := "/lib64/xorg/modules/drivers"
 	origPath := filepath.Join(
-		driverPath, targetPath,
+		driverPath, sourcePath,
 		"nvidia_drv.so",
 	)
 

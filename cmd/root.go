@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	specs "github.com/macaroni-os/gpu-configurator/pkg/specs"
 
 	"github.com/spf13/cobra"
@@ -18,7 +19,7 @@ import (
 const (
 	cliName = `Copyright (c) 2024 - Macaroni OS - Daniele Rondina
 
-gpu-configurator - A GPU configurator helper for Xwayland and/or Xorg`
+gpu-configurator - A GPU configurator helper for Xwayland and/or Xorg configuration`
 )
 
 var (
@@ -91,8 +92,17 @@ func Execute() {
 			// Parse configuration file
 			err = config.Unmarshal()
 			if err != nil {
-				panic(err)
+				if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+					// Config file not found; ignore error if desired
+				} else {
+					fmt.Println(err)
+					os.Exit(1)
+				}
 			}
+
+			// Initialize logger
+			log := logger.NewLogger(config)
+			log.SetAsDefault()
 		},
 	}
 

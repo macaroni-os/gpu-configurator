@@ -6,6 +6,7 @@ package analyzer
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 	"strings"
 
 	bmacaroni "github.com/macaroni-os/gpu-configurator/pkg/backend"
+	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 
 	"github.com/macaroni-os/macaronictl/pkg/utils"
@@ -107,6 +109,8 @@ func (a *Analyzer) Read() error {
 	var regexICD = regexp.MustCompile(`.json$|.json.disabled$`)
 	var dirs []string
 
+	log := logger.GetDefaultLogger()
+
 	// Read egl external platforms directories
 	dirs, err = a.Backend.GetEglExternalPlatformsDirs()
 	if err != nil {
@@ -134,9 +138,11 @@ func (a *Analyzer) Read() error {
 				continue
 			}
 
-			content, err := os.ReadFile(path.Join(dir, file.Name()))
+			f := path.Join(dir, file.Name())
+			content, err := os.ReadFile(f)
 			if err != nil {
-				// TODO: Add warning
+				log.Warning(fmt.Sprintf("error on read file %s: %s",
+					f, err.Error()))
 				continue
 			}
 
@@ -146,6 +152,8 @@ func (a *Analyzer) Read() error {
 			}
 
 			jsonfile := specs.NewJsonFile(file.Name(), icdjson)
+
+			log.DebugC(fmt.Sprintf("Found egl file %s", f))
 
 			egldir.Files[file.Name()] = jsonfile
 		}
@@ -179,9 +187,11 @@ func (a *Analyzer) Read() error {
 				continue
 			}
 
-			content, err := os.ReadFile(path.Join(dir, file.Name()))
+			f := path.Join(dir, file.Name())
+			content, err := os.ReadFile(f)
 			if err != nil {
-				// TODO: Add warning
+				log.Warning(fmt.Sprintf("error on read file %s: %s",
+					f, err.Error()))
 				continue
 			}
 
@@ -189,6 +199,8 @@ func (a *Analyzer) Read() error {
 			if err := json.Unmarshal(content, &vulkanFile.Content); err != nil {
 				return err
 			}
+
+			log.DebugC(fmt.Sprintf("Found vulkan file %s", f))
 
 			vulkandir.Files[file.Name()] = vulkanFile
 		}
@@ -222,9 +234,11 @@ func (a *Analyzer) Read() error {
 				continue
 			}
 
-			content, err := os.ReadFile(path.Join(dir, file.Name()))
+			f := path.Join(dir, file.Name())
+			content, err := os.ReadFile(f)
 			if err != nil {
-				// TODO: Add warning
+				log.Warning(fmt.Sprintf("error on read file %s: %s",
+					f, err.Error()))
 				continue
 			}
 
@@ -235,6 +249,8 @@ func (a *Analyzer) Read() error {
 
 			jsonfile := specs.NewJsonFile(file.Name(), icdjson)
 			vulkandir.Files[file.Name()] = jsonfile
+
+			log.DebugC(fmt.Sprintf("Found vulkan icd file %s", f))
 		}
 
 	}

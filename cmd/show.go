@@ -10,6 +10,7 @@ import (
 
 	"github.com/macaroni-os/gpu-configurator/pkg/analyzer"
 	"github.com/macaroni-os/gpu-configurator/pkg/analyzer/pci"
+	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 
 	"github.com/spf13/cobra"
@@ -131,6 +132,16 @@ func printSummary(s *specs.System) error {
 				))
 			}
 		}
+
+		if len(s.Nvidia.KOpenModuleAvailable) > 0 {
+			fmt.Println("NVIDIA Open Kernel Modules Available:")
+			for idx := range s.Nvidia.KOpenModuleAvailable {
+				fmt.Println(fmt.Sprintf("\t* %s - %s",
+					s.Nvidia.KOpenModuleAvailable[idx].GetFieldVersion(),
+					s.Nvidia.KOpenModuleAvailable[idx].KernelVersion,
+				))
+			}
+		}
 	}
 
 	return nil
@@ -154,26 +165,24 @@ func newShowCommand(config *specs.Config) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			output, _ := cmd.Flags().GetString("output")
+			log := logger.GetDefaultLogger()
 
 			analyzer, err := analyzer.NewAnalyzer(
 				config.GetGeneral().GetBackendType(),
 			)
 			if err != nil {
-				fmt.Println("ERROR", err.Error())
-				os.Exit(1)
+				log.Fatal("error on initialize analyzer:", err.Error())
 			}
 
 			err = analyzer.Read()
 			if err != nil {
-				fmt.Println("Error on analyze system", err.Error())
-				os.Exit(1)
+				log.Fatal("error on analyze system:", err.Error())
 			}
 
 			if output == "terminal" {
 				err := printSummary(analyzer.GetSystem())
 				if err != nil {
-					fmt.Println("Error", err.Error())
-					os.Exit(1)
+					log.Fatal("Error", err.Error())
 				}
 
 			} else {
@@ -187,8 +196,7 @@ func newShowCommand(config *specs.Config) *cobra.Command {
 				}
 
 				if err != nil {
-					fmt.Println("Error on convert system on", output, err.Error())
-					os.Exit(1)
+					log.Fatal("error on convert system on", output, err.Error())
 				}
 
 				fmt.Println(string(data))

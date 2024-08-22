@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/macaroni-os/gpu-configurator/pkg/analyzer"
+	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 
 	"github.com/spf13/cobra"
@@ -47,20 +48,20 @@ func newEglCommand(config *specs.Config) *cobra.Command {
 			disableJsonLoader, _ := cmd.Flags().GetBool("disable-json-loader")
 			purge, _ := cmd.Flags().GetBool("purge")
 
+			log := logger.GetDefaultLogger()
+
 			jsonLoader := args[0]
 
 			analyzer, err := analyzer.NewAnalyzer(
 				config.GetGeneral().GetBackendType(),
 			)
 			if err != nil {
-				fmt.Println("ERROR", err.Error())
-				os.Exit(1)
+				log.Fatal("error on initialize analyzer:", err.Error())
 			}
 
 			err = analyzer.Read()
 			if err != nil {
-				fmt.Println("Error on analyze system", err.Error())
-				os.Exit(1)
+				log.Fatal("error on analyze system:", err.Error())
 			}
 
 			eglfiles, jsonfile := analyzer.GetSystem().GetEglLoader(jsonLoader)
@@ -69,13 +70,12 @@ func newEglCommand(config *specs.Config) *cobra.Command {
 					// POST: ignore error if the file is not present
 					return
 				}
-				fmt.Println("No json loader file with name", jsonLoader, "found.")
-				os.Exit(1)
+				log.Fatal("No json loader file with name", jsonLoader, "found.")
 			}
 
 			if enableJsonLoader {
 				if !jsonfile.Disabled {
-					fmt.Println("Json loader file", jsonLoader, "already enabled.")
+					log.InfoC("Json loader file", jsonLoader, "already enabled.")
 					return
 				}
 
@@ -83,8 +83,7 @@ func newEglCommand(config *specs.Config) *cobra.Command {
 				fileabsDisabled := fileabs + ".disabled"
 				err := os.Rename(fileabsDisabled, fileabs)
 				if err != nil {
-					fmt.Println("Error on rename file:", err.Error())
-					os.Exit(1)
+					log.Fatal("error on rename file:", err.Error())
 				}
 
 			} else if disableJsonLoader {
@@ -97,21 +96,19 @@ func newEglCommand(config *specs.Config) *cobra.Command {
 
 					err := os.Remove(fileabs)
 					if err != nil {
-						fmt.Println("Error on remove file:", err.Error())
-						os.Exit(1)
+						log.Fatal("error on remove file:", err.Error())
 					}
 				} else {
 
 					if jsonfile.Disabled {
-						fmt.Println("Json loader file", jsonLoader, "already disabled.")
+						log.InfoC("Json loader file", jsonLoader, "already disabled.")
 						return
 					}
 
 					fileabsDisabled := fileabs + ".disabled"
 					err := os.Rename(fileabs, fileabsDisabled)
 					if err != nil {
-						fmt.Println("Error on rename file:", err.Error())
-						os.Exit(1)
+						log.Fatal("error on rename file:", err.Error())
 					}
 				}
 			}

@@ -127,9 +127,10 @@ func (l *Logger) Msg(level string, withoutColor, ln bool, msg ...interface{}) {
 
 	for idx, m := range msg {
 		if idx > 0 {
-			message += " "
+			message += " " + fmt.Sprint("%v", m)
+		} else {
+			message += fmt.Sprintf("%v", m)
 		}
-		message += fmt.Sprintf("%v", m)
 	}
 
 	var levelMsg string
@@ -145,7 +146,7 @@ func (l *Logger) Msg(level string, withoutColor, ln bool, msg ...interface{}) {
 		case "info":
 			levelMsg = l.Aurora.Bold(l.Aurora.White(message)).BgBlack().String()
 		case "error":
-			levelMsg = l.Aurora.Bold(l.Aurora.Red(":bomb: " + message + ":fire:")).BgBlack().String()
+			levelMsg = l.Aurora.Bold(l.Aurora.Red(fmt.Sprintf(":bomb: %s :fire:", message))).BgBlack().String()
 		}
 	}
 
