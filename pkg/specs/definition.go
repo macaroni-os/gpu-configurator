@@ -18,7 +18,9 @@ type NVIDIASetup struct {
 	Drivers              []*NVIDIADriver `json:"drivers,omitempty" yaml:"drivers,omitempty"`
 	VersionActive        string          `json:"version_active,omitempty" yaml:"version_active,omitempty"`
 	KModuleAvailable     []*KernelModule `json:"kernel_modules,omitempty" yaml:"kernel_modules,omitempty"`
+	KModuleActive        []*KernelModule `json:"kernel_modules_active,omitempty" yaml:"kernel_modules_active,omitempty"`
 	KOpenModuleAvailable []*KernelModule `json:"kernel_open_modules,omitempty" yaml:"kernel_open_modules,omitempty"`
+	KOpenModuleActive    []*KernelModule `json:"kernel_open_modules_active,omitempty" yaml:"kernel_open_modules_active,omitempty"`
 }
 
 type NVIDIADriver struct {

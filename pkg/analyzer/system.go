@@ -286,5 +286,18 @@ func (a *Analyzer) Read() error {
 	}
 	a.System.Nvidia.KOpenModuleAvailable = *nvidiaOpenKModules
 
+	// Retrieve NVIDIA Kernel drivers active
+	nvidiaKModulesActive, err := a.Backend.GetNVIDIAKernelModulesActive(false)
+	if err != nil {
+		return err
+	}
+	a.System.Nvidia.KModuleActive = *nvidiaKModulesActive
+
+	nvidiaOpenKModulesActive, err := a.Backend.GetNVIDIAKernelModulesActive(true)
+	if err != nil {
+		return err
+	}
+	a.System.Nvidia.KOpenModuleActive = *nvidiaOpenKModulesActive
+
 	return nil
 }

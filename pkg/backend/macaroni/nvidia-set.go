@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 	"github.com/macaroni-os/macaronictl/pkg/utils"
 )
@@ -49,11 +50,13 @@ var (
 )
 
 func (b *MacaroniBackend) SetNVIDIAVersion(setup *specs.NVIDIASetup, v string) error {
+	log := logger.GetDefaultLogger()
 	// NOTE: I want to reset the links and setup every time. This permits
 	//       to fix things also when there are bugs on gpu-configurator with
-	//       previous versions.
+	//       previous versions. But the purge is done at configure command
+	//       level.
 
-	fmt.Println("Setting version ", v)
+	log.InfoC("Setting version", v)
 	// Configure NVIDIA version needs:
 
 	// 1. create /etc/env.d/09nvidia file
@@ -122,9 +125,7 @@ func (b *MacaroniBackend) SetNVIDIAVersion(setup *specs.NVIDIASetup, v string) e
 		return err
 	}
 
-	// 12. create hardlink to nvidia kernel driver.
-
-	// 13. create the /lib/udev/nvidia-udev.sh based on version enabled.
+	// 12. create the /lib/udev/nvidia-udev.sh based on version enabled.
 	err = b.createUdevScript()
 	if err != nil {
 		return err

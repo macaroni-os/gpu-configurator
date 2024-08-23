@@ -133,12 +133,32 @@ func printSummary(s *specs.System) error {
 			}
 		}
 
+		if len(s.Nvidia.KModuleActive) > 0 {
+			fmt.Println("NVIDIA Kernel Modules Active:")
+			for idx := range s.Nvidia.KModuleActive {
+				fmt.Println(fmt.Sprintf("\t* %s - %s",
+					s.Nvidia.KModuleActive[idx].GetFieldVersion(),
+					s.Nvidia.KModuleActive[idx].KernelVersion,
+				))
+			}
+		}
+
 		if len(s.Nvidia.KOpenModuleAvailable) > 0 {
 			fmt.Println("NVIDIA Open Kernel Modules Available:")
 			for idx := range s.Nvidia.KOpenModuleAvailable {
 				fmt.Println(fmt.Sprintf("\t* %s - %s",
 					s.Nvidia.KOpenModuleAvailable[idx].GetFieldVersion(),
 					s.Nvidia.KOpenModuleAvailable[idx].KernelVersion,
+				))
+			}
+		}
+
+		if len(s.Nvidia.KOpenModuleActive) > 0 {
+			fmt.Println("NVIDIA Open Kernel Modules Active:")
+			for idx := range s.Nvidia.KOpenModuleActive {
+				fmt.Println(fmt.Sprintf("\t* %s - %s",
+					s.Nvidia.KOpenModuleActive[idx].GetFieldVersion(),
+					s.Nvidia.KOpenModuleActive[idx].KernelVersion,
 				))
 			}
 		}

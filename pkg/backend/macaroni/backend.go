@@ -23,6 +23,13 @@ const (
 	NvidiaPrefixDriverPath = "/opt/nvidia"
 )
 
+var (
+	KernelModuleSupportedCompression = []string{
+		".zst",
+		".xz",
+	}
+)
+
 type MacaroniBackend struct {
 	Name string
 }
@@ -128,24 +135,87 @@ func (b *MacaroniBackend) GetNVIDIADriverActive() (string, error) {
 }
 
 func (b *MacaroniBackend) GetNVIDIAKernelModulesActive(open bool) (*[]*specs.KernelModule, error) {
-	modulePath := "/lib/modules/nvidia"
-	if open {
-		modulePath = "/lib/modules/nvidia-open"
-	}
-
-	log := logger.GetDefaultLogger()
+	modulePath := "/lib/modules"
 	ans := []*specs.KernelModule{}
+	log := logger.GetDefaultLogger()
 
 	if !utils.Exists(modulePath) {
 		return &ans, nil
 	}
 
-	/*
-		dirEntries, err := os.ReadDir(modulePath)
-		if err != nil {
-			return nil, err
+	dirEntries, err := os.ReadDir(modulePath)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, file := range dirEntries {
+		if !file.IsDir() {
+			continue
 		}
-	*/
+
+		driverType := ""
+		kversion := ""
+		kVersion := file.Name()
+
+		nvidiaKmoduleDir := filepath.Join(
+			modulePath, kVersion, "video")
+
+		// NOTE: It seems that there are few difference from modinfo
+		//       between open and proprietary driver. I use license.
+
+		nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+
+		if utils.Exists(nvidiaKModule) {
+			kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+			driverType, _ = kernel.ModinfoField(nvidiaKModule, "license")
+		} else {
+			// Check for the compresses modules
+			for _, c := range KernelModuleSupportedCompression {
+				nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+				nvidiaKModule += c
+				if utils.Exists(nvidiaKModule) {
+					kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+					driverType, _ = kernel.ModinfoField(nvidiaKModule, "license")
+					break
+				}
+			}
+		}
+
+		// If driverType is empty I consider the kernel module
+		// as NVIDIA driver.
+		if open && (driverType == "" || driverType == "NVIDIA") {
+			continue
+		}
+
+		if !open && (driverType != "" && driverType != "NVIDIA") {
+
+			log.DebugC(fmt.Sprintf("Skipping kernel driver for version %s and kernel %s on path %s.",
+				kversion, kVersion, nvidiaKmoduleDir))
+			continue
+		}
+
+		if kversion != "" {
+
+			if open {
+				log.DebugC(fmt.Sprintf("Found open active kernel driver for version %s and kernel %s.",
+					kversion, kVersion))
+			} else {
+				log.DebugC(fmt.Sprintf("Found active kernel driver for version %s and kernel %s.",
+					kversion, kVersion))
+			}
+
+			lp := &specs.KernelModule{
+				Path:          nvidiaKModule,
+				KernelVersion: kVersion,
+				Name:          "nvidia",
+				Fields:        make(map[string]string, 0),
+			}
+			lp.Fields["version"] = kversion
+			lp.Fields["license"] = driverType
+			ans = append(ans, lp)
+		}
+
+	}
 
 	return &ans, nil
 }
@@ -186,18 +256,27 @@ func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelMod
 
 		for _, kf := range kernelDirs {
 			kVersion := kf.Name()
+			kversion := ""
+			license := ""
 
 			nvidiaKmoduleDir := filepath.Join(
 				nvidiaKVersionPath, kVersion, "video")
-			nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko.xz")
 
-			kversion := ""
+			nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+
 			if utils.Exists(nvidiaKModule) {
 				kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+				license, _ = kernel.ModinfoField(nvidiaKModule, "license")
 			} else {
-				nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
-				if utils.Exists(nvidiaKModule) {
-					kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+				for _, c := range KernelModuleSupportedCompression {
+					nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+					nvidiaKModule += c
+
+					if utils.Exists(nvidiaKModule) {
+						kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+						license, _ = kernel.ModinfoField(nvidiaKModule, "license")
+						break
+					}
 				}
 			}
 
@@ -221,6 +300,7 @@ func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelMod
 					Fields:        make(map[string]string, 0),
 				}
 				lp.Fields["version"] = kversion
+				lp.Fields["license"] = license
 				ans = append(ans, lp)
 			}
 		}
@@ -269,15 +349,20 @@ func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 
 		nvidiaKmoduleDir := filepath.Join(
 			"/lib/modules/", kVersion, "video")
-		nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko.zst")
+		nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
 
 		kversion := ""
 		if utils.Exists(nvidiaKModule) {
 			kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
 		} else {
-			nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
-			if utils.Exists(nvidiaKModule) {
-				kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+			for _, c := range KernelModuleSupportedCompression {
+				nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+				nvidiaKModule += c
+
+				if utils.Exists(nvidiaKModule) {
+					kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+					break
+				}
 			}
 		}
 
