@@ -22,6 +22,7 @@ func newNvidiaCommand(config *specs.Config) *cobra.Command {
 	cmd.AddCommand(
 		NewGbmLibCommand(config),
 		NewConfigureCommand(config),
+		NewKernlCommand(config),
 	)
 
 	return cmd

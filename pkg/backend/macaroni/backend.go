@@ -171,7 +171,7 @@ func (b *MacaroniBackend) GetNVIDIAKernelModulesActive(open bool) (*[]*specs.Ker
 		} else {
 			// Check for the compresses modules
 			for _, c := range KernelModuleSupportedCompression {
-				nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+				nvidiaKModule = filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
 				nvidiaKModule += c
 				if utils.Exists(nvidiaKModule) {
 					kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
@@ -269,7 +269,7 @@ func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelMod
 				license, _ = kernel.ModinfoField(nvidiaKModule, "license")
 			} else {
 				for _, c := range KernelModuleSupportedCompression {
-					nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+					nvidiaKModule = filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
 					nvidiaKModule += c
 
 					if utils.Exists(nvidiaKModule) {
@@ -282,12 +282,14 @@ func (b *MacaroniBackend) GetNVIDIAKernelModules(open bool) (*[]*specs.KernelMod
 
 			if open {
 				log.DebugC(fmt.Sprintf(
-					"Found open kernel module %s for nvidia version %s under %s.",
-					kVersion, nvidiaVersion, nvidiaKmoduleDir))
+					"Found open kernel module %s for nvidia version %s under %s (%s).",
+					kVersion, nvidiaVersion, nvidiaKmoduleDir,
+					filepath.Base(nvidiaKModule)))
 			} else {
 				log.DebugC(fmt.Sprintf(
-					"Found kernel module %s for nvidia version %s under %s.",
-					kVersion, nvidiaVersion, nvidiaKmoduleDir))
+					"Found kernel module %s for nvidia version %s under %s (%s).",
+					kVersion, nvidiaVersion, nvidiaKmoduleDir,
+					filepath.Base(nvidiaKModule)))
 			}
 
 			// TODO: if nvidiaKModule != nvidiaVersion add Warning.
@@ -356,7 +358,7 @@ func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 			kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
 		} else {
 			for _, c := range KernelModuleSupportedCompression {
-				nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+				nvidiaKModule = filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
 				nvidiaKModule += c
 
 				if utils.Exists(nvidiaKModule) {

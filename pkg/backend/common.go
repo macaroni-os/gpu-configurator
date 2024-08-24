@@ -32,6 +32,7 @@ type SystemBackend interface {
 	SetNVIDIAModprobeFiles(*specs.NVIDIASetup, bool, bool) error
 	PurgeNVIDIADriver(*specs.NVIDIASetup) error
 	PurgeNVIDIAKernelDriverActive(*specs.NVIDIASetup, string, string) error
+	ActiveNVIDIAKernelDriver(*specs.NVIDIASetup, string, string, bool) error
 }
 
 func NewBackend(btype string) (SystemBackend, error) {

@@ -29,3 +29,41 @@ func (n *NVIDIASetup) GetDriver(v string) *NVIDIADriver {
 	}
 	return nil
 }
+
+func (n *NVIDIASetup) GetKernelModulesAvailable(nv string, open bool) *[]*KernelModule {
+	ans := []*KernelModule{}
+
+	if open {
+		for _, km := range n.KOpenModuleAvailable {
+			if km.GetFieldVersion() == nv {
+				ans = append(ans, km)
+			}
+		}
+	} else {
+		for _, km := range n.KModuleAvailable {
+			if km.GetFieldVersion() == nv {
+				ans = append(ans, km)
+			}
+		}
+	}
+
+	return &ans
+}
+
+func (n *NVIDIASetup) GetKernelModulesActive(nv, kv string) *KernelModule {
+	// Search on proprietary modules
+	for _, km := range n.KModuleActive {
+		if km.KernelVersion == kv && km.GetFieldVersion() == nv {
+			return km
+		}
+	}
+
+	// Search on open modules
+	for _, km := range n.KOpenModuleActive {
+		if km.KernelVersion == kv && km.GetFieldVersion() == nv {
+			return km
+		}
+	}
+
+	return nil
+}

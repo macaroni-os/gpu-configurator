@@ -152,6 +152,7 @@ func (b *MacaroniBackend) createLdsoconfdFile(v string) error {
 }
 
 func (b *MacaroniBackend) createConfdIfNotPresent(v string) error {
+	log := logger.GetDefaultLogger()
 	driverPath := b.getDriverDir(v)
 
 	targetDir := "/etc/conf.d"
@@ -164,7 +165,7 @@ func (b *MacaroniBackend) createConfdIfNotPresent(v string) error {
 	)
 
 	if !utils.Exists(origPath) {
-		fmt.Println(fmt.Sprintf("WARNING: File %s not found",
+		log.Warning(fmt.Sprintf("WARNING: File %s not found",
 			origPath))
 	}
 
@@ -215,7 +216,6 @@ func (b *MacaroniBackend) createXorgModulesExtension(v string) error {
 		"libglxserver_nvidia.so",
 	)
 
-	fmt.Println("ORIG ", origPath)
 	if utils.Exists(origPath) {
 
 		if !utils.Exists(targetPath) {
