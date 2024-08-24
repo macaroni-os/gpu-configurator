@@ -7,11 +7,51 @@ package kernel
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
+	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	"github.com/macaroni-os/macaronictl/pkg/utils"
 )
+
+func Depmod(kernelVersion string, flags []string) error {
+	log := logger.GetDefaultLogger()
+	depmodBin := utils.TryResolveBinaryAbsPath("depmod")
+	args := []string{
+		depmodBin, "-a",
+	}
+
+	if len(flags) > 0 {
+		args = append(args, flags...)
+	}
+
+	args = append(args, kernelVersion)
+
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	log.InfoC(fmt.Sprintf("Running %s...",
+		strings.Join(args, " ")))
+
+	err := cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return err
+	}
+
+	if cmd.ProcessState.ExitCode() != 0 {
+		return fmt.Errorf("depmod exiting with %s",
+			cmd.ProcessState.ExitCode())
+	}
+
+	return nil
+}
 
 func ModinfoField(fpath, field string) (string, error) {
 	var errBuffer bytes.Buffer

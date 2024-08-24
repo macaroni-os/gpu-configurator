@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/macaroni-os/gpu-configurator/pkg/kernel"
 	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 	"github.com/macaroni-os/macaronictl/pkg/utils"
@@ -145,7 +146,9 @@ func (b *MacaroniBackend) activeKernelModule(setup *specs.NVIDIASetup, km *specs
 
 	}
 
-	return nil
+	// After that the driver is been installed we need
+	// to rebuild the kernel symbols with depmod
+	return kernel.Depmod(km.KernelVersion, []string{})
 }
 
 func (b *MacaroniBackend) PurgeNVIDIAKernelDriverActive(setup *specs.NVIDIASetup,
@@ -181,12 +184,16 @@ func (b *MacaroniBackend) PurgeNVIDIAKernelDriverActive(setup *specs.NVIDIASetup
 
 func (b *MacaroniBackend) purgeKernelDriverFromList(listRef *[]*specs.KernelModule,
 	nvidiaVersion string, kernelVersion string) error {
+	log := logger.GetDefaultLogger()
 
 	purgedDrivers := 0
 
-	log := logger.GetDefaultLogger()
 	for _, kmodule := range *listRef {
-		if kmodule.KernelVersion != kernelVersion {
+		if kmodule.KernelVersion != kernelVersion &&
+			(kernelVersion != "" && kernelVersion != "*") {
+			log.DebugC(fmt.Sprintf(
+				"Ignoring module %s (%s)",
+				kmodule.KernelVersion, kernelVersion))
 			continue
 		}
 
@@ -194,6 +201,10 @@ func (b *MacaroniBackend) purgeKernelDriverFromList(listRef *[]*specs.KernelModu
 		if nvidiaVersion != "" && nvidiaVersion != "*" {
 			// POST: Check if version match
 			if kv != nvidiaVersion {
+				log.DebugC(fmt.Sprintf(
+					"Ignoring module with a mismatch version %s != %s",
+					kv, nvidiaVersion))
+
 				continue
 			}
 		}
@@ -232,6 +243,13 @@ func (b *MacaroniBackend) purgeKernelDriverFromList(listRef *[]*specs.KernelModu
 		}
 
 		purgedDrivers++
+
+		// After that the driver is been removed we need
+		// to rebuild the kernel symbols with depmod
+		err = kernel.Depmod(kmodule.KernelVersion, []string{})
+		if err != nil {
+			return err
+		}
 	}
 
 	if purgedDrivers == 0 {
