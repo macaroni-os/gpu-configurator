@@ -15,8 +15,9 @@ import (
 	"github.com/macaroni-os/macaronictl/pkg/utils"
 )
 
-func (b *MacaroniBackend) PurgeNVIDIADriver(setup *specs.NVIDIASetup) error {
+func (b *MacaroniBackend) PurgeNVIDIADriver(system *specs.System) error {
 
+	setup := system.GetNvidia()
 	log := logger.GetDefaultLogger()
 
 	if setup.VersionActive != "" {
@@ -85,6 +86,12 @@ func (b *MacaroniBackend) PurgeNVIDIADriver(setup *specs.NVIDIASetup) error {
 
 	// 11. removing /etc/ld.so.conf.d file
 	err = b.purgeLdsoconfdFile()
+	if err != nil {
+		return err
+	}
+
+	// 12. Remove gbm links
+	err = b.PurgeGBMLinks(system, []string{gbmlibName, gbmlibNameShort})
 	if err != nil {
 		return err
 	}

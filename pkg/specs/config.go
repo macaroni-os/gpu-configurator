@@ -22,6 +22,7 @@ type Config struct {
 
 	General CGeneral `mapstructure:"general" json:"general,omitempty" yaml:"general,omitempty"`
 	Logging CLogging `mapstructure:"logging" json:"logging,omitempty" yaml:"logging,omitempty"`
+	Nvidia  CNvidia  `mapstructure:"nvidia,omitempty" json:"nvidia,omitempty" yaml:"nvidia,omitempty"`
 }
 
 type CGeneral struct {
@@ -46,6 +47,11 @@ type CLogging struct {
 	Color bool `mapstructure:"color,omitempty" json:"color,omitempty" yaml:"color,omitempty"`
 }
 
+type CNvidia struct {
+	// Enable/Disable GBM library/Backend
+	EnableGbmlib bool `mapstructure:"enable_gbmlib,omitempty" json:"enable_gbmlib,omitempty" yaml:"enable_gbmlib,omitempty"`
+}
+
 func NewConfig(viper *v.Viper) *Config {
 	if viper == nil {
 		viper = v.New()
@@ -55,13 +61,9 @@ func NewConfig(viper *v.Viper) *Config {
 	return &Config{Viper: viper}
 }
 
-func (c *Config) GetGeneral() *CGeneral {
-	return &c.General
-}
-
-func (c *Config) GetLogging() *CLogging {
-	return &c.Logging
-}
+func (c *Config) GetGeneral() *CGeneral { return &c.General }
+func (c *Config) GetLogging() *CLogging { return &c.Logging }
+func (c *Config) GetNvidia() *CNvidia   { return &c.Nvidia }
 
 func (c *Config) Unmarshal() error {
 	c.Viper.ReadInConfig()
@@ -88,6 +90,10 @@ func GenDefault(viper *v.Viper) {
 	viper.SetDefault("logging.color", true)
 
 	viper.SetDefault("general.backend", "macaroni")
+
+	// NVIDIA section default options.
+	// Enable GBM Backend breaks some system. Leave disable by default.
+	viper.SetDefault("nvidia.enable_gbmlib", false)
 }
 
 func (g *CGeneral) HasDebug() bool {

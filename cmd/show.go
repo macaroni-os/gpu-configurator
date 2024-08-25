@@ -100,11 +100,15 @@ func printSummary(s *specs.System) error {
 	} else {
 		fmt.Println("GBM Backend Librarires:")
 		for idx := range s.GbmLibraries {
+			str := fmt.Sprintf("\t- %s", s.GbmLibraries[idx].Name)
 			if s.GbmLibraries[idx].Disabled {
-				fmt.Println("\t-", s.GbmLibraries[idx].Name, "(disabled)")
-			} else {
-				fmt.Println("\t-", s.GbmLibraries[idx].Name)
+				str += " (disabled)"
 			}
+			if s.GbmLibraries[idx].Broken {
+				str += " !"
+			}
+
+			fmt.Println(str)
 		}
 	}
 

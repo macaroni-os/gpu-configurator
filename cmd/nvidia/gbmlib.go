@@ -5,13 +5,11 @@ See AUTHORS and LICENSE for the license details and contributors.
 package nvidia
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/macaroni-os/gpu-configurator/pkg/analyzer"
+	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
-	"github.com/macaroni-os/macaronictl/pkg/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -24,15 +22,16 @@ func NewGbmLibCommand(config *specs.Config) *cobra.Command {
 			enableDriver, _ := cmd.Flags().GetBool("enable-driver")
 			disableDriver, _ := cmd.Flags().GetBool("disable-driver")
 			purge, _ := cmd.Flags().GetBool("purge")
+			log := logger.GetDefaultLogger()
 
 			if enableDriver && disableDriver {
-				fmt.Println(
+				log.InfoC(
 					"Using both --enable-driver and --disable-driver not admitted.")
 				os.Exit(1)
 			}
 
 			if purge && !disableDriver {
-				fmt.Println(
+				log.InfoC(
 					"--purge flag to use with --disable-driver.")
 				os.Exit(1)
 			}
@@ -42,163 +41,53 @@ func NewGbmLibCommand(config *specs.Config) *cobra.Command {
 			enableDriver, _ := cmd.Flags().GetBool("enable-driver")
 			disableDriver, _ := cmd.Flags().GetBool("disable-driver")
 			purge, _ := cmd.Flags().GetBool("purge")
+			log := logger.GetDefaultLogger()
 
 			analyzer, err := analyzer.NewAnalyzer(
 				config.GetGeneral().GetBackendType(),
 			)
 			if err != nil {
-				fmt.Println("ERROR", err.Error())
-				os.Exit(1)
+				log.Fatal(err.Error())
 			}
 
 			err = analyzer.Read()
 			if err != nil {
-				fmt.Println("Error on analyze system", err.Error())
-				os.Exit(1)
+				log.Fatal("error on analyze system", err.Error())
 			}
 
-			libName := "nvidia-drm_gbm.so"
-			// Some applications search for nvidia_gbm.so (for
-			// example the electron applications).
-			libNameShort := "nvidia_gbm.so"
-
-			nvidiagbmlib := analyzer.GetSystem().GetGBMLibrary(
-				libName,
-			)
 			if analyzer.GetSystem().Nvidia == nil ||
 				analyzer.GetSystem().Nvidia.VersionActive == "" {
-				fmt.Println("No NVIDIA version active available.")
-				fmt.Println("Check if the package with NVIDIA drivers is installed.")
+				log.Warning("No NVIDIA version active available.")
+				log.Warning("Check if the package with NVIDIA drivers is installed.")
 				os.Exit(1)
 			}
 
-			if enableDriver {
-				if nvidiagbmlib == nil {
-					// POST: The library link is not present.
+			if purge {
 
-					nvidiaDriver := analyzer.GetSystem().Nvidia.GetDriver(
-						analyzer.GetSystem().Nvidia.VersionActive,
-					)
-					if nvidiaDriver == nil {
-						fmt.Println("Unexpected error on retrieve nvidia driver data.")
-						os.Exit(1)
-					}
-
-					linkedFile := filepath.Join(
-						nvidiaDriver.Path, "lib64", libName,
-					)
-					linkFile := filepath.Join(
-						analyzer.GetBackend().GetGBMLibDir(),
-						libName,
-					)
-
-					err := os.Symlink(linkedFile, linkFile)
-					if err != nil {
-						fmt.Println(fmt.Sprintf(
-							"error on create symlink on %s: %s",
-							linkFile, err.Error()))
-						os.Exit(1)
-					}
-
-					linkShortFile := filepath.Join(
-						analyzer.GetBackend().GetGBMLibDir(),
-						libNameShort,
-					)
-					// Create the short lib name link
-					err = os.Symlink(linkedFile, linkShortFile)
-					if err != nil {
-						fmt.Println(fmt.Sprintf(
-							"error on create symlink on %s: %s",
-							linkShortFile, err.Error()))
-						os.Exit(1)
-					}
-
-				} else {
-
-					if !nvidiagbmlib.Disabled {
-						fmt.Println("Library", libName, "already active.")
-						fmt.Println("Nothing to do.")
-						return
-					}
-
-					libpath := filepath.Join(
-						analyzer.GetBackend().GetGBMLibDir(),
-						nvidiagbmlib.Name,
-					)
-					libpathDisabled := libpath + ".disabled"
-
-					err := os.Rename(libpathDisabled, libpath)
-					if err != nil {
-						fmt.Println("Error on rename link:", err.Error())
-						os.Exit(1)
-					}
-
-				}
-
-				fmt.Println("Operation done.")
-
-			} else if disableDriver {
-
-				libpath := filepath.Join(
-					analyzer.GetBackend().GetGBMLibDir(),
-					nvidiagbmlib.Name,
+				err = analyzer.GetBackend().PurgeGBMLinks(
+					analyzer.GetSystem(),
+					[]string{"nvidia-drm_gbm.so", "nvidia_gbm.so"},
 				)
-				libpathDisabled := libpath + ".disabled"
 
-				if purge && nvidiagbmlib != nil {
-					if nvidiagbmlib.Disabled {
-						err = os.Remove(libpathDisabled)
-					} else {
-						err = os.Remove(libpath)
-					}
+			} else {
 
-					if err != nil {
-						fmt.Println("Error on remove link:", err.Error())
-						os.Exit(1)
-					}
-
-					nvidiagbmlibShort := filepath.Join(
-						analyzer.GetBackend().GetGBMLibDir(),
-						libNameShort,
-					)
-					if utils.Exists(nvidiagbmlibShort) {
-						err := os.Remove(nvidiagbmlibShort)
-						if err != nil {
-							fmt.Println(fmt.Sprintf("Error on remove file %s: %s",
-								nvidiagbmlibShort, err.Error()))
-							os.Exit(1)
-						}
-					}
-
-				} else if nvidiagbmlib == nil || nvidiagbmlib.Disabled {
-					fmt.Println("Library", libName, "not present or already disable.")
-					fmt.Println("Nothing to do.")
-					return
-				} else {
-
-					err := os.Rename(libpath, libpathDisabled)
-					if err != nil {
-						fmt.Println("Error on rename link:", err.Error())
-						os.Exit(1)
-					}
-
-					nvidiagbmlibShort := filepath.Join(
-						analyzer.GetBackend().GetGBMLibDir(),
-						libNameShort,
-					)
-					if utils.Exists(nvidiagbmlibShort) {
-						err := os.Remove(nvidiagbmlibShort)
-						if err != nil {
-							fmt.Println(fmt.Sprintf("Error on remove file %s: %s",
-								nvidiagbmlibShort, err.Error()))
-						}
-						os.Exit(1)
-					}
+				enabled := enableDriver
+				if disableDriver {
+					enabled = false
 				}
+				err = analyzer.GetBackend().ConfigureGBMLinks(
+					analyzer.GetSystem(),
+					analyzer.GetSystem().Nvidia.VersionActive,
+					enabled,
+				)
 
-				fmt.Println("Operation done.")
 			}
 
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+
+			log.InfoC("Operation done.")
 		},
 	}
 

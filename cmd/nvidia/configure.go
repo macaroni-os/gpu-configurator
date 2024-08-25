@@ -30,6 +30,7 @@ func NewConfigureCommand(config *specs.Config) *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			force, _ := cmd.Flags().GetBool("force")
+			ifNotSet, _ := cmd.Flags().GetBool("if-not-set")
 			purge, _ := cmd.Flags().GetBool("purge")
 			withVideoGroup, _ := cmd.Flags().GetBool("with-video-group")
 
@@ -49,7 +50,7 @@ func NewConfigureCommand(config *specs.Config) *cobra.Command {
 			if purge {
 				if analyzer.GetSystem().GetNvidia().VersionActive == targetVersion || force {
 					err = analyzer.GetBackend().PurgeNVIDIADriver(
-						analyzer.GetSystem().GetNvidia(),
+						analyzer.GetSystem(),
 					)
 					if err != nil {
 						log.Fatal(fmt.Sprintf(
@@ -57,16 +58,22 @@ func NewConfigureCommand(config *specs.Config) *cobra.Command {
 							targetVersion, err.Error()))
 					}
 					log.InfoC(fmt.Sprintf("Nvidia generated files purged."))
+				} else {
+					log.InfoC(fmt.Sprintf("Active version is %s. Nothing to do.",
+						analyzer.GetSystem().GetNvidia().VersionActive,
+					))
 				}
 
 			} else {
 				log.InfoC(fmt.Sprintf("Setting version %s...", targetVersion))
 
-				if analyzer.GetSystem().GetNvidia().VersionActive != targetVersion || force {
+				if (ifNotSet && analyzer.GetSystem().GetNvidia().VersionActive == "") ||
+					(!ifNotSet && analyzer.GetSystem().GetNvidia().VersionActive != targetVersion) ||
+					force {
 
 					if analyzer.GetSystem().GetNvidia().VersionActive == targetVersion {
 						err = analyzer.GetBackend().PurgeNVIDIADriver(
-							analyzer.GetSystem().GetNvidia(),
+							analyzer.GetSystem(),
 						)
 						if err != nil {
 							log.Fatal(fmt.Sprintf(
@@ -76,7 +83,8 @@ func NewConfigureCommand(config *specs.Config) *cobra.Command {
 					}
 
 					err = analyzer.GetBackend().SetNVIDIAVersion(
-						analyzer.GetSystem().GetNvidia(),
+						config,
+						analyzer.GetSystem(),
 						targetVersion)
 
 					if err != nil {
@@ -98,12 +106,18 @@ func NewConfigureCommand(config *specs.Config) *cobra.Command {
 							targetVersion,
 							err.Error()))
 					}
+				} else {
+					log.InfoC(fmt.Sprintf("Active version is %s. Nothing to do.",
+						analyzer.GetSystem().GetNvidia().VersionActive,
+					))
 				}
 			}
 		},
 	}
 
 	var flags = cmd.Flags()
+	flags.Bool("if-not-set", false,
+		"Configure the selected version if not present an existing version.")
 	flags.BoolP("force", "f", false, "Forcing set of the selected version.")
 	flags.Bool("purge", false, "Remove generated file of the the selected version.")
 	flags.Bool("with-video-group", true,

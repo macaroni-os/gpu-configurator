@@ -49,7 +49,8 @@ var (
 	}
 )
 
-func (b *MacaroniBackend) SetNVIDIAVersion(setup *specs.NVIDIASetup, v string) error {
+func (b *MacaroniBackend) SetNVIDIAVersion(config *specs.Config,
+	system *specs.System, v string) error {
 	log := logger.GetDefaultLogger()
 	// NOTE: I want to reset the links and setup every time. This permits
 	//       to fix things also when there are bugs on gpu-configurator with
@@ -131,6 +132,15 @@ func (b *MacaroniBackend) SetNVIDIAVersion(setup *specs.NVIDIASetup, v string) e
 		return err
 	}
 
+	// Update current Nvidia system with the new value
+	system.GetNvidia().VersionActive = v
+
+	// 13. create GBM Links
+	err = b.ConfigureGBMLinks(system, v, config.GetNvidia().EnableGbmlib)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -167,6 +177,7 @@ func (b *MacaroniBackend) createConfdIfNotPresent(v string) error {
 	if !utils.Exists(origPath) {
 		log.Warning(fmt.Sprintf("WARNING: File %s not found",
 			origPath))
+		return nil
 	}
 
 	// NOTE: at the moment the file /etc/conf.d/nvidia-persistenced

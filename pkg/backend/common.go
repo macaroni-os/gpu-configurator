@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	bmacaroni "github.com/macaroni-os/gpu-configurator/pkg/backend/macaroni"
+
 	"github.com/macaroni-os/gpu-configurator/pkg/specs"
 )
 
@@ -20,6 +21,8 @@ type SystemBackend interface {
 	// GBM stuff
 	GetGBMLibDir() string
 	GetEnvironmentDir() string
+	PurgeGBMLinks(*specs.System, []string) error
+	ConfigureGBMLinks(*specs.System, string, bool) error
 
 	// NVIDIA gpu functions
 	GetNVIDIAEglWaylandLibDir() string
@@ -28,9 +31,9 @@ type SystemBackend interface {
 	GetNVIDIAKernelModules(open bool) (*[]*specs.KernelModule, error)
 	GetNVIDIAKernelModulesActive(open bool) (*[]*specs.KernelModule, error)
 	GetNVIDIADriverActive() (string, error)
-	SetNVIDIAVersion(*specs.NVIDIASetup, string) error
+	SetNVIDIAVersion(*specs.Config, *specs.System, string) error
 	SetNVIDIAModprobeFiles(*specs.NVIDIASetup, bool, bool) error
-	PurgeNVIDIADriver(*specs.NVIDIASetup) error
+	PurgeNVIDIADriver(*specs.System) error
 	PurgeNVIDIAKernelDriverActive(*specs.NVIDIASetup, string, string) error
 	ActiveNVIDIAKernelDriver(*specs.NVIDIASetup, string, string, bool) error
 }
