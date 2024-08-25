@@ -91,6 +91,17 @@ func (a *Analyzer) readGbmLibs() error {
 				return err
 			}
 			lib.LinkedFile = linkedLink
+
+			link2test := linkedLink
+			// Check if the link is broken:
+			if !strings.HasPrefix(linkedLink, "/") {
+				// POST: link relative path.
+				link2test = filepath.Join(gbmlibdir, linkedLink)
+			}
+
+			if !utils.Exists(link2test) {
+				lib.Broken = true
+			}
 		}
 
 		if strings.HasSuffix(file.Name(), "disabled") {

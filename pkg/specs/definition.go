@@ -64,6 +64,7 @@ type ICDJsonData struct {
 type Library struct {
 	Name       string `json:"library" yaml:"library"`
 	Disabled   bool   `json:"disabled,omitempty" yaml:"disabled,omitempty"`
+	Broken     bool   `json:"broken,omitempty" yaml:"broken,omitempty"`
 	LinkedFile string `json:"linked_libpath,omitempty" yaml:"linked_libpath,omitempty'`
 }
 
