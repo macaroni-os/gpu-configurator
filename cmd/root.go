@@ -11,6 +11,7 @@ import (
 
 	"github.com/macaroni-os/gpu-configurator/pkg/logger"
 	specs "github.com/macaroni-os/gpu-configurator/pkg/specs"
+	"github.com/macaroni-os/macaronictl/pkg/utils"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -87,6 +88,13 @@ func Execute() {
 			v.SetConfigType("yml")
 			if v.Get("config") != "" {
 				v.SetConfigFile(v.Get("config").(string))
+			} else {
+
+				defConfig := "/etc/gpu-configurator/config.yml"
+				if utils.Exists(defConfig) {
+					v.SetConfigFile(defConfig)
+				}
+
 			}
 
 			// Parse configuration file
