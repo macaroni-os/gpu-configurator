@@ -8,7 +8,7 @@ require (
 	github.com/kyokomi/emoji v2.2.4+incompatible
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/macaroni-os/macaronictl v0.10.1-0.20240825074850-41176cae4c33
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v2 v2.4.0
