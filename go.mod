@@ -2,8 +2,6 @@ module github.com/macaroni-os/gpu-configurator
 
 go 1.21.0
 
-toolchain go1.21.0
-
 require (
 	github.com/kyokomi/emoji v2.2.4+incompatible
 	github.com/logrusorgru/aurora v2.0.3+incompatible
