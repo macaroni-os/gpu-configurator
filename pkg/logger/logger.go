@@ -127,9 +127,9 @@ func (l *Logger) Msg(level string, withoutColor, ln bool, msg ...interface{}) {
 
 	for idx, m := range msg {
 		if idx > 0 {
-			message += " " + fmt.Sprintf("%v", m)
+			message += message + " " + fmt.Sprintf("%v", m)
 		} else {
-			message += fmt.Sprintf("%v", m)
+			message = fmt.Sprintf("%v", m)
 		}
 	}
 
@@ -193,6 +193,6 @@ func (l *Logger) Error(mess ...interface{}) {
 }
 
 func (l *Logger) Fatal(mess ...interface{}) {
-	l.Error(mess)
+	l.Error(mess...)
 	os.Exit(1)
 }
