@@ -30,15 +30,19 @@ github.com/kyokomi/emoji
 # github.com/logrusorgru/aurora v2.0.3+incompatible
 ## explicit
 github.com/logrusorgru/aurora
-# github.com/macaroni-os/macaronictl v0.10.1-0.20240825074850-41176cae4c33
+# github.com/macaroni-os/macaronictl v0.10.1-0.20240828210328-6dce3b985996
 ## explicit; go 1.20
 github.com/macaroni-os/macaronictl/pkg/utils
 # github.com/magiconair/properties v1.8.7
 ## explicit; go 1.19
 github.com/magiconair/properties
+# github.com/mattn/go-runewidth v0.0.15
+## explicit; go 1.9
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
+# github.com/olekukonko/tablewriter v0.0.5
+## explicit; go 1.12
 # github.com/onsi/ginkgo/v2 v2.19.0
 ## explicit; go 1.20
 # github.com/onsi/gomega v1.34.1
@@ -50,6 +54,8 @@ github.com/pelletier/go-toml/v2/internal/characters
 github.com/pelletier/go-toml/v2/internal/danger
 github.com/pelletier/go-toml/v2/internal/tracker
 github.com/pelletier/go-toml/v2/unstable
+# github.com/rivo/uniseg v0.4.4
+## explicit; go 1.18
 # github.com/sagikazarmark/locafero v0.6.0
 ## explicit; go 1.20
 github.com/sagikazarmark/locafero
@@ -116,10 +122,14 @@ golang.org/x/exp/slog/internal/buffer
 ## explicit; go 1.11
 # golang.org/x/net v0.28.0
 ## explicit; go 1.18
+# golang.org/x/sync v0.8.0
+## explicit; go 1.18
 # golang.org/x/sys v0.24.0
 ## explicit; go 1.18
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# golang.org/x/term v0.23.0
+## explicit; go 1.18
 # golang.org/x/text v0.17.0
 ## explicit; go 1.18
 golang.org/x/text/encoding
@@ -143,3 +153,5 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
+# mvdan.cc/sh/v3 v3.5.1
+## explicit; go 1.17
