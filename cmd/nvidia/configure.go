@@ -58,6 +58,8 @@ func NewConfigureCommand(config *specs.Config) *cobra.Command {
 							targetVersion, err.Error()))
 					}
 					log.InfoC(fmt.Sprintf("Nvidia generated files purged."))
+				} else if analyzer.GetSystem().GetNvidia().VersionActive == "" {
+					log.InfoC(fmt.Sprintf("No active version. Nothing to do. Use --force eventually."))
 				} else {
 					log.InfoC(fmt.Sprintf("Active version is %s. Nothing to do.",
 						analyzer.GetSystem().GetNvidia().VersionActive,
@@ -70,6 +72,14 @@ func NewConfigureCommand(config *specs.Config) *cobra.Command {
 				if (ifNotSet && analyzer.GetSystem().GetNvidia().VersionActive == "") ||
 					(!ifNotSet && analyzer.GetSystem().GetNvidia().VersionActive != targetVersion) ||
 					force {
+
+					// Check if the version is present.
+					if analyzer.GetSystem().GetNvidia().GetDriver(targetVersion) == nil {
+						log.Fatal("" + fmt.Sprintf(
+							"Version %s is not available.",
+							targetVersion,
+						))
+					}
 
 					if analyzer.GetSystem().GetNvidia().VersionActive == targetVersion {
 						err = analyzer.GetBackend().PurgeNVIDIADriver(
