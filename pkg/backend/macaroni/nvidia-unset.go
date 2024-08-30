@@ -103,6 +103,8 @@ func (b *MacaroniBackend) removeFileIfExist(f string) error {
 	log := logger.GetDefaultLogger()
 
 	if utils.Exists(f) {
+		log.DebugC(fmt.Sprintf(
+			"Removing file %s", f))
 		err := os.Remove(f)
 		if err != nil {
 			return err
