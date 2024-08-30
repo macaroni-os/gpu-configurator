@@ -504,6 +504,13 @@ func (b *MacaroniBackend) createPngFile(v string) error {
 		"nvidia-settings.png",
 	)
 
+	if !utils.Exists(pixmapsDir) {
+		err := os.MkdirAll(pixmapsDir, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
 	if utils.Exists(sourceFile) {
 		err := os.Symlink(sourceFile, targetFile)
 		if err != nil {
