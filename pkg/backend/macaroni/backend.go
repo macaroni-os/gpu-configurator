@@ -328,10 +328,16 @@ func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 		return nil, err
 	}
 
-	// Retrieve current kernel version
-	kVersion, err := kernel.GetRuntimeKernelVersion()
+	// Retrieve the list of the kernels directories available.
+	kernels := []string{}
+	kernelsDirEntries, err := os.ReadDir("/lib/modules/")
 	if err != nil {
 		return nil, err
+	}
+	for _, kv := range kernelsDirEntries {
+		if kv.IsDir() {
+			kernels = append(kernels, kv.Name())
+		}
 	}
 
 	for _, file := range dirEntries {
@@ -349,31 +355,40 @@ func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 			Version: version,
 		}
 
-		nvidiaKmoduleDir := filepath.Join(
-			"/lib/modules/", kVersion, "video")
-		nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+		for _, kv := range kernels {
+			nvidiaKmoduleDir := filepath.Join(
+				"/lib/modules/", kv, "video")
+			nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
 
-		kversion := ""
-		if utils.Exists(nvidiaKModule) {
-			kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
-		} else {
-			for _, c := range KernelModuleSupportedCompression {
-				nvidiaKModule = filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
-				nvidiaKModule += c
+			log.DebugC(fmt.Sprintf(
+				"Checking kernel version %s and version %s...",
+				kv, version))
 
-				if utils.Exists(nvidiaKModule) {
-					kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
-					break
+			kversion := ""
+			if utils.Exists(nvidiaKModule) {
+				kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+			} else {
+				for _, c := range KernelModuleSupportedCompression {
+					nvidiaKModule = filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
+					nvidiaKModule += c
+
+					if utils.Exists(nvidiaKModule) {
+						kversion, _ = kernel.ModinfoField(nvidiaKModule, "version")
+						break
+					}
 				}
 			}
+
+			if version == kversion {
+				driverDir.WithKernelModules = true
+			} else {
+				continue
+			}
+
+			log.DebugC(fmt.Sprintf("Found driver %s under %s with kernel module %v",
+				version, driverDir.Path, driverDir.WithKernelModules))
 		}
 
-		if version == kversion {
-			driverDir.WithKernelModules = true
-		}
-
-		log.DebugC(fmt.Sprintf("Found driver %s under %s with kernel module %v",
-			version, driverDir.Path, driverDir.WithKernelModules))
 		ans = append(ans, driverDir)
 	}
 
