@@ -34,7 +34,7 @@ type SystemBackend interface {
 	SetNVIDIAVersion(*specs.Config, *specs.System, string) error
 	SetNVIDIAModprobeFiles(*specs.NVIDIASetup, bool, bool) error
 	PurgeNVIDIADriver(*specs.System) error
-	PurgeNVIDIAKernelDriverActive(*specs.NVIDIASetup, string, string) error
+	PurgeNVIDIAKernelDriverActive(*specs.NVIDIASetup, string, string, string) error
 	ActiveNVIDIAKernelDriver(*specs.NVIDIASetup, string, string, bool) error
 }
 

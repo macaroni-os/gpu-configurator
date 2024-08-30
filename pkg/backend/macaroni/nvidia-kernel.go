@@ -152,7 +152,7 @@ func (b *MacaroniBackend) activeKernelModule(setup *specs.NVIDIASetup, km *specs
 }
 
 func (b *MacaroniBackend) PurgeNVIDIAKernelDriverActive(setup *specs.NVIDIASetup,
-	nvidiaVersion string, kernelVersion string) error {
+	nvidiaVersion, kernelVersion, driverType string) error {
 	log := logger.GetDefaultLogger()
 
 	log.DebugC(fmt.Sprintf(
@@ -160,7 +160,8 @@ func (b *MacaroniBackend) PurgeNVIDIAKernelDriverActive(setup *specs.NVIDIASetup
 		kernelVersion, nvidiaVersion))
 
 	// Check driver between kernel active modules
-	if len(setup.KModuleActive) > 0 {
+	if (driverType == "all" || driverType == "proprietary") &&
+		len(setup.KModuleActive) > 0 {
 
 		err := b.purgeKernelDriverFromList(&setup.KModuleActive,
 			nvidiaVersion, kernelVersion)
@@ -170,7 +171,8 @@ func (b *MacaroniBackend) PurgeNVIDIAKernelDriverActive(setup *specs.NVIDIASetup
 	}
 
 	// Check driver between kernel active open modules
-	if len(setup.KOpenModuleActive) > 0 {
+	if (driverType == "all" || driverType == "open") &&
+		len(setup.KOpenModuleActive) > 0 {
 
 		err := b.purgeKernelDriverFromList(&setup.KOpenModuleActive,
 			nvidiaVersion, kernelVersion)

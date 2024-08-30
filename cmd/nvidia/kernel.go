@@ -51,7 +51,15 @@ func NewKernlCommand(config *specs.Config) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			log := logger.GetDefaultLogger()
 			purge, _ := cmd.Flags().GetBool("purge")
+			all, _ := cmd.Flags().GetBool("all")
 			proprietary, _ := cmd.Flags().GetBool("proprietary")
+
+			driverType := "proprietary"
+			if all {
+				driverType = "all"
+			} else if !proprietary {
+				driverType = "open"
+			}
 
 			analyzer, err := analyzer.NewAnalyzer(
 				config.GetGeneral().GetBackendType(),
@@ -74,7 +82,7 @@ func NewKernlCommand(config *specs.Config) *cobra.Command {
 
 				err := analyzer.GetBackend().PurgeNVIDIAKernelDriverActive(
 					analyzer.GetSystem().GetNvidia(),
-					targetVersion, kernelVersion)
+					targetVersion, kernelVersion, driverType)
 				if err != nil {
 					log.Fatal(err.Error())
 				}
@@ -105,6 +113,7 @@ func NewKernlCommand(config *specs.Config) *cobra.Command {
 	var flags = cmd.Flags()
 	flags.Bool("purge", false, "remove the selected kernels from the /lib/modules/<kernel>/video directory.")
 	flags.Bool("proprietary", true, "Use NVIDIA proprietary driver instead of Open NVIDIA driver.")
+	flags.Bool("all", false, "Purge all proprietary and/or open driver.")
 
 	return cmd
 }
