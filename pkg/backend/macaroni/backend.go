@@ -317,6 +317,7 @@ func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 	log := logger.GetDefaultLogger()
 
 	dirPrefix := "nvidia-drivers"
+	modulesPath := "/lib/modules/"
 
 	if !utils.Exists(NvidiaPrefixDriverPath) {
 		// POST: no nvidia drivers available
@@ -330,13 +331,16 @@ func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 
 	// Retrieve the list of the kernels directories available.
 	kernels := []string{}
-	kernelsDirEntries, err := os.ReadDir("/lib/modules/")
-	if err != nil {
-		return nil, err
-	}
-	for _, kv := range kernelsDirEntries {
-		if kv.IsDir() {
-			kernels = append(kernels, kv.Name())
+
+	if utils.Exists(modulesPath) {
+		kernelsDirEntries, err := os.ReadDir(modulesPath)
+		if err != nil {
+			return nil, err
+		}
+		for _, kv := range kernelsDirEntries {
+			if kv.IsDir() {
+				kernels = append(kernels, kv.Name())
+			}
 		}
 	}
 
@@ -357,7 +361,7 @@ func (b *MacaroniBackend) GetNVIDIADrivers() (*[]*specs.NVIDIADriver, error) {
 
 		for _, kv := range kernels {
 			nvidiaKmoduleDir := filepath.Join(
-				"/lib/modules/", kv, "video")
+				modulesPath, kv, "video")
 			nvidiaKModule := filepath.Join(nvidiaKmoduleDir, "nvidia.ko")
 
 			log.DebugC(fmt.Sprintf(
