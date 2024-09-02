@@ -57,7 +57,6 @@ func (b *MacaroniBackend) SetNVIDIAVersion(config *specs.Config,
 	//       previous versions. But the purge is done at configure command
 	//       level.
 
-	log.InfoC("Setting version", v)
 	// Configure NVIDIA version needs:
 
 	// 1. create /etc/env.d/09nvidia file
@@ -141,6 +140,8 @@ func (b *MacaroniBackend) SetNVIDIAVersion(config *specs.Config,
 		return err
 	}
 
+	log.InfoC(fmt.Sprintf("Version %s configured.", v))
+
 	return nil
 }
 
@@ -184,7 +185,7 @@ func (b *MacaroniBackend) createConfdIfNotPresent(v string) error {
 	//       very few options. It doesn't make sense to manage
 	//       CONFIG_PROTECT. I just avoid to update it if it's
 	//       already present.
-	if utils.Exists(targetFile) {
+	if !utils.Exists(targetFile) {
 
 		if !utils.Exists(targetDir) {
 			err := os.MkdirAll(targetDir, os.ModePerm)
@@ -211,6 +212,10 @@ func (b *MacaroniBackend) createConfdIfNotPresent(v string) error {
 		if err != nil {
 			return err
 		}
+	} else {
+		log.DebugC(fmt.Sprintf(
+			"File %s is already present on rootfs.",
+			targetFile))
 	}
 
 	return nil
