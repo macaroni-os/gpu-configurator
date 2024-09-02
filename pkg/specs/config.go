@@ -14,7 +14,7 @@ import (
 
 const (
 	GPUCONF_ENV_PREFIX = "GPUCONF"
-	GPUCONF_VERSION    = "0.2.6"
+	GPUCONF_VERSION    = "0.2.7"
 )
 
 type Config struct {
