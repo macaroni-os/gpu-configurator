@@ -24,7 +24,7 @@ func (s *SystemDevices) GetVGADevices() *[]*PCIDevice {
 
 	for _, device := range *s {
 		words := strings.Split(device.ClassName, " ")
-		if len(words) > 0 && words[0] == "VGA" {
+		if len(words) > 0 && (words[0] == "VGA" || words[0] == "3D") {
 			ans = append(ans, device)
 		}
 	}
