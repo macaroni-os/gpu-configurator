@@ -110,6 +110,30 @@ NVIDIA Kernel Modules Available:
 
 The `nvidia` command contains sub-command for NVIDIA setup configuration.
 
+```
+NVIDIA setup commands.
+
+Usage:
+   nvidia [command]
+
+Aliases:
+  nvidia, nv
+
+Available Commands:
+  configure   Configure a specific version of NVIDIA driver.
+  gbmlib      GBM Backend Library configuration.
+  kernel      Activate or disable a specific kernel version of NVIDIA driver.
+
+Flags:
+  -h, --help   help for nvidia
+
+Global Flags:
+  -c, --config string   Gpu Configurator configfile
+  -d, --debug           Enable debug output.
+
+Use " nvidia [command] --help" for more information about a command.
+```
+
 #### `nvidia gbmlib`
 
 This command permits to create the link of the GBM NVIDIA library or to disable
@@ -131,6 +155,41 @@ Global Flags:
   -c, --config string   Gpu Configurator configfile
   -d, --debug           Enable debug output.
 ```
+
+#### `nvidia kernel`
+
+The `nvidia kernel` command is normally called by packages finalizer.
+You don't need it directly.
+
+Purge a specific kernel version driver related to a specific NVIDIA driver:
+
+```bash
+$> gpu-configurator nvidia kernel --purge 560.35.03 6.7.9-zen1-macaroni
+```
+
+Configure a specific NVIDIA kernel version for a specific NVIDIA driver:
+
+```bash
+$> gpu-configurator nvidia kernel 560.35.03 6.7.9-zen1-macaroni
+```
+
+Configure a specific nvidia opensource kernel version for a specific NVIDIA driver:
+
+```bash
+$> gpu-configurator nvidia kernel --proprietary=false 560.35.03 6.7.9-zen1-macaroni
+```
+
+#### `nvidia configure`
+
+The `nvidia configure` command permits to setup a specific NVIDIA driver
+previously installed for the running system or purge a specific NVIDIA driver.
+
+```bash
+$> gpu-configurator nvidia configure --with-video-group 535.183.01
+
+$> gpu-configurator nvidia configure --with-video-group 535.183.01 --purge
+```
+
 
 ### `vulkan`
 
